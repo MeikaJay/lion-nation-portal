@@ -378,7 +378,7 @@ export default function PortalHome() {
         <section className="portal-featured">
           <article className="portal-featured-card">
             <div className="portal-featured-head">
-              <p className="portal-card-kicker">Featured Challenge</p>
+              <p className="portal-card-kicker">Featured Challenge: Collect all clues, then try your luck. If you know the answer before the final clue, go for it.</p>
               <h2>{clueTitle || "Daily Clue"}</h2>
             </div>
 
