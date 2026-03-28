@@ -15,25 +15,25 @@ export default function PortalSalesLeaderboard() {
     loadPage();
   }, []);
 
-  const previousDayTop10 = useMemo(() => {
+  const previousDayTop5 = useMemo(() => {
     return [...rows]
       .sort((a, b) => b.previous_day_sales - a.previous_day_sales || a.agent_name.localeCompare(b.agent_name))
       .filter((row) => row.previous_day_sales > 0)
-      .slice(0, 10);
+      .slice(0, 5);
   }, [rows]);
 
-  const monthTop10 = useMemo(() => {
+  const monthTop5 = useMemo(() => {
     return [...rows]
       .sort((a, b) => b.month_sales - a.month_sales || a.agent_name.localeCompare(b.agent_name))
       .filter((row) => row.month_sales > 0)
-      .slice(0, 10);
+      .slice(0, 5);
   }, [rows]);
 
-  const quarterTop10 = useMemo(() => {
+  const quarterTop5 = useMemo(() => {
     return [...rows]
       .sort((a, b) => b.quarter_sales - a.quarter_sales || a.agent_name.localeCompare(b.agent_name))
       .filter((row) => row.quarter_sales > 0)
-      .slice(0, 10);
+      .slice(0, 5);
   }, [rows]);
 
   async function loadPage() {
@@ -82,11 +82,11 @@ export default function PortalSalesLeaderboard() {
     navigate("/");
   }
 
-  function renderTop10Card(title, rows, salesKey) {
+  function renderTop5Card(title, rows, salesKey) {
     return (
       <div className="portal-sales-board-card">
         <div className="portal-sales-board-head">
-          <p className="portal-sales-board-kicker">Top 10</p>
+          <p className="portal-sales-board-kicker">Top 5</p>
           <h3>{title}</h3>
         </div>
 
@@ -120,7 +120,7 @@ export default function PortalSalesLeaderboard() {
           <img src="/Lion Nation.png" alt="Lion Nation" className="portal-sales-logo" />
           <div>
             <p className="portal-sales-mini-title">Lion Nation Portal</p>
-            <h1>Top 10 Sales</h1>
+            <h1>Top 5 Sales</h1>
             <p className="portal-sales-subtitle">
               Welcome, {userName}. See who is leading the site in sales.
             </p>
@@ -148,16 +148,16 @@ export default function PortalSalesLeaderboard() {
           <p className="portal-sales-tag">Sales Only</p>
           <h2>Site Sales Rankings</h2>
           <p>
-            This board shows the Top 10 for previous day, current month, and current quarter.
+            This board shows the Top 5 for previous day, current month, and current quarter.
           </p>
         </section>
 
         {message ? <p className="portal-sales-message">{message}</p> : null}
 
         <section className="portal-sales-boards-grid">
-          {renderTop10Card("Previous Day", previousDayTop10, "previous_day_sales")}
-          {renderTop10Card("Current Month", monthTop10, "month_sales")}
-          {renderTop10Card("Current Quarter", quarterTop10, "quarter_sales")}
+          {renderTop5Card("Previous Day", previousDayTop5, "previous_day_sales")}
+          {renderTop5Card("Current Month", monthTop5, "month_sales")}
+          {renderTop5Card("Current Quarter", quarterTop5, "quarter_sales")}
         </section>
       </main>
     </div>

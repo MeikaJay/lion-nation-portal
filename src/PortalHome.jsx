@@ -48,7 +48,7 @@ export default function PortalHome() {
           b.month_sales - a.month_sales || a.agent_name.localeCompare(b.agent_name)
       )
       .filter((row) => row.month_sales > 0)
-      .slice(0, 10);
+      .slice(0, 5);
   }, [salesRows]);
 
   useEffect(() => {
@@ -330,7 +330,7 @@ export default function PortalHome() {
           </button>
 
           <button className="portal-nav-btn" onClick={() => navigate("/portal/sales")}>
-            Top 10 Sales
+            Top 5 Sales
           </button>
 
           <button className="portal-nav-btn" onClick={() => navigate("/portal/bingo")}>
@@ -453,7 +453,7 @@ export default function PortalHome() {
           <article className="portal-card portal-home-card">
             <div className="portal-card-head">
               <p className="portal-card-kicker">Top Performers</p>
-              <h3>Top 10 Agents of the Month</h3>
+              <h3>Top 5 Agents of the Month</h3>
             </div>
 
             <div className="portal-top10-list">
