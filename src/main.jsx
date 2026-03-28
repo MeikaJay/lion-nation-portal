@@ -278,6 +278,16 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     </ProtectedRoute>
   }
 />
+<Route
+  path="/admin/sales-tip"
+  element={
+    <ProtectedRoute>
+      <AdminRoute>
+        <AdminSalesTip />
+      </AdminRoute>
+    </ProtectedRoute>
+  }
+/>
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

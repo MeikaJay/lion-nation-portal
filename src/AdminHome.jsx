@@ -220,14 +220,14 @@ export default function AdminHome() {
             </button>
 
             <button
-              type="button"
-              className="admin-box admin-box-button"
-              onClick={() => goTo("/admin/sales-tip")}
-            >
-              <span className="admin-box-badge">Coaching</span>
-              <h3>Manage Sales Tip</h3>
-              <p>Post one active sales tip at a time to guide agent conversations.</p>
-            </button>
+  type="button"
+  className="admin-box admin-box-button"
+  onClick={() => goTo("/admin/sales-tip")}
+>
+  <span className="admin-box-badge">Coaching</span>
+  <h3>Manage Sales Tip</h3>
+  <p>Post one active sales tip at a time to guide agent conversations.</p>
+</button>
 
             <button
               type="button"
