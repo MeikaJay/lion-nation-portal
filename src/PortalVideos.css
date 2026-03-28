@@ -1,0 +1,316 @@
+.portal-videos-page {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at top, rgba(212, 153, 33, 0.18), transparent 30%),
+      linear-gradient(135deg, #040404 0%, #111111 48%, #1c1304 100%);
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+    padding: 40px;
+    box-sizing: border-box;
+  }
+  
+  .portal-videos-loading {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0a0a0a;
+    color: white;
+    font-size: 22px;
+    font-weight: 700;
+  }
+  
+  .portal-videos-header {
+    max-width: 1400px;
+    margin: 0 auto 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .portal-videos-brand {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .portal-videos-logo {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+  }
+  
+  .portal-videos-mini-title {
+    color: #d9a441;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 0 0 6px;
+  }
+  
+  .portal-videos-brand h1 {
+    margin: 0 0 6px;
+    font-size: 36px;
+    line-height: 1.1;
+  }
+  
+  .portal-videos-subtitle {
+    margin: 0;
+    color: #d3d3d3;
+    line-height: 1.5;
+  }
+  
+  .portal-videos-header-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .portal-videos-logout-btn,
+  .portal-videos-post-btn,
+  .portal-videos-like-btn,
+  .portal-videos-secondary-btn {
+    border: none;
+    border-radius: 14px;
+    padding: 12px 18px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+  
+  .portal-videos-logout-btn,
+  .portal-videos-post-btn {
+    background: linear-gradient(135deg, #f5b234, #b97812);
+    color: #111;
+  }
+  
+  .portal-videos-secondary-btn,
+  .portal-videos-like-btn {
+    background: rgba(255, 191, 73, 0.1);
+    color: #f3d28e;
+    border: 1px solid rgba(255, 191, 73, 0.18);
+  }
+  
+  .portal-videos-like-btn.liked {
+    background: rgba(255, 191, 73, 0.18);
+  }
+  
+  .portal-videos-logout-btn:hover,
+  .portal-videos-post-btn:hover,
+  .portal-videos-like-btn:hover,
+  .portal-videos-secondary-btn:hover {
+    transform: translateY(-1px);
+  }
+  
+  .portal-videos-main {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+  
+  .portal-videos-featured-card,
+  .portal-videos-comments-card,
+  .portal-videos-archive-card,
+  .portal-videos-empty-card {
+    background: rgba(15, 15, 15, 0.95);
+    border: 1px solid rgba(255, 191, 73, 0.18);
+    border-radius: 24px;
+    padding: 28px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  }
+  
+  .portal-videos-tag,
+  .portal-videos-empty-label,
+  .portal-videos-section-kicker {
+    margin: 0 0 10px;
+    color: #d9a441;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+  
+  .portal-videos-featured-card h2,
+  .portal-videos-empty-card h2 {
+    margin: 0 0 8px;
+    font-size: 34px;
+    line-height: 1.15;
+  }
+  
+  .portal-videos-date {
+    margin: 0 0 18px;
+    color: #cfcfcf;
+  }
+  
+  .portal-videos-player {
+    width: 100%;
+    border-radius: 18px;
+    background: #000;
+    margin-bottom: 18px;
+  }
+  
+  .portal-videos-caption {
+    margin: 0;
+    color: #e5e5e5;
+    line-height: 1.7;
+    white-space: pre-wrap;
+  }
+  
+  .portal-videos-actions {
+    margin-top: 18px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .portal-videos-section-head {
+    margin-bottom: 18px;
+  }
+  
+  .portal-videos-section-head h3 {
+    margin: 0;
+    font-size: 24px;
+  }
+  
+  .portal-videos-comment-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .portal-videos-comment-form textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 191, 73, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    box-sizing: border-box;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 14px;
+  }
+  
+  .portal-videos-comment-form textarea:focus {
+    outline: none;
+    border-color: rgba(255, 191, 73, 0.45);
+    box-shadow: 0 0 0 3px rgba(255, 191, 73, 0.08);
+  }
+  
+  .portal-videos-message {
+    margin: 12px 0 0;
+    color: #f3d28e;
+    line-height: 1.5;
+  }
+  
+  .portal-videos-empty-comments {
+    margin-top: 16px;
+    padding: 20px;
+    border-radius: 16px;
+    background: rgba(255, 191, 73, 0.06);
+    border: 1px dashed rgba(255, 191, 73, 0.18);
+    color: #d3d3d3;
+    text-align: center;
+  }
+  
+  .portal-videos-comments-list,
+  .portal-videos-archive-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 18px;
+  }
+  
+  .portal-videos-comment-item,
+  .portal-videos-archive-item {
+    border: 1px solid rgba(255, 191, 73, 0.16);
+    border-radius: 18px;
+    padding: 18px;
+    background: rgba(255, 255, 255, 0.03);
+  }
+  
+  .portal-videos-comment-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  
+  .portal-videos-comment-top h4,
+  .portal-videos-archive-item h4 {
+    margin: 0;
+    font-size: 18px;
+  }
+  
+  .portal-videos-comment-top span,
+  .portal-videos-archive-item span {
+    color: #f3d28e;
+    font-size: 13px;
+  }
+  
+  .portal-videos-comment-item p,
+  .portal-videos-archive-item p {
+    margin: 0;
+    color: #dfdfdf;
+    line-height: 1.7;
+  }
+  
+  @media (max-width: 900px) {
+    .portal-videos-page {
+      padding: 24px;
+    }
+  
+    .portal-videos-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  
+    .portal-videos-brand h1 {
+      font-size: 30px;
+    }
+  
+    .portal-videos-featured-card h2,
+    .portal-videos-empty-card h2 {
+      font-size: 28px;
+    }
+  }
+  
+  @media (max-width: 560px) {
+    .portal-videos-page {
+      padding: 18px;
+    }
+  
+    .portal-videos-logo {
+      width: 72px;
+      height: 72px;
+    }
+  
+    .portal-videos-brand h1 {
+      font-size: 26px;
+    }
+  
+    .portal-videos-featured-card,
+    .portal-videos-comments-card,
+    .portal-videos-archive-card,
+    .portal-videos-empty-card {
+      padding: 20px;
+    }
+  
+    .portal-videos-header-actions {
+      width: 100%;
+    }
+  
+    .portal-videos-logout-btn,
+    .portal-videos-post-btn,
+    .portal-videos-like-btn,
+    .portal-videos-secondary-btn {
+      width: 100%;
+    }
+  }

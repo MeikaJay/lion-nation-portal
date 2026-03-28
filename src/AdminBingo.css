@@ -1,0 +1,453 @@
+.admin-bingo-page {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at top, rgba(212, 153, 33, 0.18), transparent 30%),
+      linear-gradient(135deg, #040404 0%, #111111 48%, #1c1304 100%);
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+    padding: 40px;
+    box-sizing: border-box;
+  }
+  
+  .admin-bingo-loading {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0a0a0a;
+    color: white;
+    font-size: 22px;
+    font-weight: 700;
+  }
+  
+  .admin-bingo-header {
+    max-width: 1400px;
+    margin: 0 auto 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .admin-bingo-brand {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .admin-bingo-logo {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+  }
+  
+  .admin-bingo-mini-title {
+    color: #d9a441;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 0 0 6px;
+  }
+  
+  .admin-bingo-brand h1 {
+    margin: 0 0 6px;
+    font-size: 36px;
+    line-height: 1.1;
+  }
+  
+  .admin-bingo-subtitle {
+    margin: 0;
+    color: #d3d3d3;
+    line-height: 1.5;
+  }
+  
+  .admin-bingo-header-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .admin-bingo-logout-btn,
+  .admin-bingo-primary-btn,
+  .admin-bingo-secondary-btn,
+  .admin-bingo-agent-item {
+    border: none;
+    border-radius: 14px;
+    padding: 12px 18px;
+    font-weight: 800;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+  
+  .admin-bingo-logout-btn,
+  .admin-bingo-primary-btn {
+    background: linear-gradient(135deg, #f5b234, #b97812);
+    color: #111;
+    cursor: pointer;
+  }
+  
+  .admin-bingo-secondary-btn {
+    background: rgba(255, 191, 73, 0.1);
+    color: #f3d28e;
+    border: 1px solid rgba(255, 191, 73, 0.18);
+    cursor: pointer;
+  }
+  
+  .admin-bingo-secondary-btn.danger {
+    background: rgba(255, 86, 86, 0.12);
+    color: #ffb1b1;
+    border: 1px solid rgba(255, 86, 86, 0.22);
+  }
+  
+  .admin-bingo-logout-btn:hover,
+  .admin-bingo-primary-btn:hover,
+  .admin-bingo-secondary-btn:hover,
+  .admin-bingo-agent-item:hover {
+    transform: translateY(-1px);
+  }
+  
+  .admin-bingo-main {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
+  .admin-bingo-hero,
+  .admin-bingo-form-card,
+  .admin-bingo-progress-card,
+  .admin-bingo-winner-card {
+    background: rgba(15, 15, 15, 0.95);
+    border: 1px solid rgba(255, 191, 73, 0.18);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  }
+  
+  .admin-bingo-hero,
+  .admin-bingo-form-card,
+  .admin-bingo-winner-card {
+    margin-bottom: 22px;
+  }
+  
+  .admin-bingo-tag,
+  .admin-bingo-card-kicker {
+    margin: 0 0 10px;
+    color: #d9a441;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+  
+  .admin-bingo-hero h2,
+  .admin-bingo-card-head h3,
+  .admin-bingo-progress-head h3,
+  .admin-bingo-agent-detail-head h3,
+  .admin-bingo-winner-card h3 {
+    margin: 0 0 10px;
+    font-size: 32px;
+    line-height: 1.15;
+  }
+  
+  .admin-bingo-hero p,
+  .admin-bingo-winner-card p {
+    margin: 0;
+    color: #d3d3d3;
+    line-height: 1.7;
+    max-width: 820px;
+  }
+  
+  .admin-bingo-winner-card span {
+    display: inline-block;
+    margin-top: 10px;
+    color: #f3d28e;
+    font-weight: 700;
+  }
+  
+  .admin-bingo-card-head,
+  .admin-bingo-progress-head,
+  .admin-bingo-agent-detail-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  
+  .admin-bingo-pill {
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(255, 191, 73, 0.12);
+    border: 1px solid rgba(255, 191, 73, 0.2);
+    color: #f3d28e;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  
+  .admin-bingo-pill.complete-pill {
+    background: rgba(64, 189, 120, 0.14);
+    border-color: rgba(64, 189, 120, 0.22);
+    color: #91f0bb;
+  }
+  
+  .admin-bingo-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .admin-bingo-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: #f1f1f1;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  
+  .admin-bingo-form input,
+  .admin-bingo-form textarea,
+  .admin-bingo-progress-search {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 191, 73, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 14px;
+  }
+  
+  .admin-bingo-form textarea {
+    min-height: 90px;
+    resize: vertical;
+  }
+  
+  .admin-bingo-form input:focus,
+  .admin-bingo-form textarea:focus,
+  .admin-bingo-progress-search:focus {
+    outline: none;
+    border-color: rgba(255, 191, 73, 0.45);
+    box-shadow: 0 0 0 3px rgba(255, 191, 73, 0.08);
+  }
+  
+  .admin-bingo-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 14px;
+  }
+  
+  .admin-bingo-square-editor {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 191, 73, 0.12);
+    border-radius: 16px;
+    padding: 12px;
+  }
+  
+  .admin-bingo-square-editor span {
+    color: #f3d28e;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  
+  .admin-bingo-square-editor textarea {
+    min-height: 120px;
+  }
+  
+  .admin-bingo-form-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .admin-bingo-message {
+    margin: 4px 0 0;
+    color: #f3d28e;
+    line-height: 1.5;
+  }
+  
+  .admin-bingo-progress-layout {
+    display: grid;
+    grid-template-columns: 360px minmax(0, 1fr);
+    gap: 20px;
+  }
+  
+  .admin-bingo-agent-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 720px;
+    overflow: auto;
+    padding-right: 4px;
+  }
+  
+  .admin-bingo-agent-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 191, 73, 0.14);
+    text-align: left;
+    color: white;
+    cursor: pointer;
+  }
+  
+  .admin-bingo-agent-item.selected {
+    border-color: rgba(255, 191, 73, 0.35);
+    background: rgba(255, 191, 73, 0.1);
+  }
+  
+  .admin-bingo-agent-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  
+  .admin-bingo-agent-top h4 {
+    margin: 0;
+    font-size: 18px;
+  }
+  
+  .admin-bingo-agent-item p {
+    margin: 0;
+    color: #d9d9d9;
+    font-size: 14px;
+  }
+  
+  .admin-bingo-agent-status {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255, 191, 73, 0.12);
+    color: #f3d28e;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  
+  .admin-bingo-agent-status.complete {
+    background: rgba(64, 189, 120, 0.14);
+    color: #91f0bb;
+  }
+  
+  .admin-bingo-agent-summary {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .admin-bingo-agent-squares {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  
+  .admin-bingo-agent-square {
+    border: 1px solid rgba(255, 191, 73, 0.14);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 14px;
+  }
+  
+  .admin-bingo-agent-square.completed {
+    background: rgba(64, 189, 120, 0.12);
+    border-color: rgba(64, 189, 120, 0.24);
+  }
+  
+  .admin-bingo-agent-square-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  
+  .admin-bingo-agent-square-top span {
+    color: #f3d28e;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  
+  .admin-bingo-agent-square-top strong {
+    font-size: 12px;
+    color: #e8e8e8;
+  }
+  
+  .admin-bingo-agent-square p {
+    margin: 0;
+    color: #e8e8e8;
+    line-height: 1.6;
+  }
+  
+  .admin-bingo-empty {
+    padding: 24px;
+    border-radius: 16px;
+    background: rgba(255, 191, 73, 0.06);
+    border: 1px dashed rgba(255, 191, 73, 0.18);
+    color: #d3d3d3;
+    text-align: center;
+  }
+  
+  @media (max-width: 1200px) {
+    .admin-bingo-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  
+    .admin-bingo-progress-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  @media (max-width: 900px) {
+    .admin-bingo-page {
+      padding: 24px;
+    }
+  
+    .admin-bingo-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  
+    .admin-bingo-grid,
+    .admin-bingo-agent-squares {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  
+  @media (max-width: 560px) {
+    .admin-bingo-page {
+      padding: 18px;
+    }
+  
+    .admin-bingo-logo {
+      width: 72px;
+      height: 72px;
+    }
+  
+    .admin-bingo-brand h1 {
+      font-size: 26px;
+    }
+  
+    .admin-bingo-hero,
+    .admin-bingo-form-card,
+    .admin-bingo-progress-card,
+    .admin-bingo-winner-card {
+      padding: 20px;
+    }
+  
+    .admin-bingo-grid,
+    .admin-bingo-agent-squares {
+      grid-template-columns: 1fr;
+    }
+  
+    .admin-bingo-header-actions,
+    .admin-bingo-form-actions {
+      width: 100%;
+    }
+  
+    .admin-bingo-logout-btn,
+    .admin-bingo-primary-btn,
+    .admin-bingo-secondary-btn {
+      width: 100%;
+    }
+  }

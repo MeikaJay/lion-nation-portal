@@ -1,0 +1,378 @@
+.admin-sales-page {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at top, rgba(212, 153, 33, 0.18), transparent 30%),
+      linear-gradient(135deg, #040404 0%, #111111 48%, #1c1304 100%);
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+    padding: 40px;
+    box-sizing: border-box;
+  }
+  
+  .admin-sales-loading {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0a0a0a;
+    color: white;
+    font-size: 22px;
+    font-weight: 700;
+  }
+  
+  .admin-sales-header {
+    max-width: 1400px;
+    margin: 0 auto 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .admin-sales-brand {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .admin-sales-logo {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+  }
+  
+  .admin-sales-mini-title {
+    color: #d9a441;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 0 0 6px;
+  }
+  
+  .admin-sales-brand h1 {
+    margin: 0 0 6px;
+    font-size: 36px;
+    line-height: 1.1;
+  }
+  
+  .admin-sales-subtitle {
+    margin: 0;
+    color: #d3d3d3;
+    line-height: 1.5;
+  }
+  
+  .admin-sales-header-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .admin-sales-logout-btn,
+  .admin-sales-primary-btn,
+  .admin-sales-secondary-btn,
+  .admin-sales-small-btn {
+    border: none;
+    border-radius: 14px;
+    padding: 12px 18px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+  
+  .admin-sales-logout-btn,
+  .admin-sales-primary-btn {
+    background: linear-gradient(135deg, #f5b234, #b97812);
+    color: #111;
+  }
+  
+  .admin-sales-secondary-btn,
+  .admin-sales-small-btn {
+    background: rgba(255, 191, 73, 0.1);
+    color: #f3d28e;
+    border: 1px solid rgba(255, 191, 73, 0.18);
+  }
+  
+  .admin-sales-small-btn.danger {
+    background: rgba(255, 86, 86, 0.12);
+    color: #ffb1b1;
+    border: 1px solid rgba(255, 86, 86, 0.22);
+  }
+  
+  .admin-sales-logout-btn:hover,
+  .admin-sales-primary-btn:hover,
+  .admin-sales-secondary-btn:hover,
+  .admin-sales-small-btn:hover {
+    transform: translateY(-1px);
+  }
+  
+  .admin-sales-main {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
+  .admin-sales-hero,
+  .admin-sales-form-card,
+  .admin-sales-board-card,
+  .admin-sales-entries-card {
+    background: rgba(15, 15, 15, 0.95);
+    border: 1px solid rgba(255, 191, 73, 0.18);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  }
+  
+  .admin-sales-hero {
+    margin-bottom: 22px;
+  }
+  
+  .admin-sales-tag,
+  .admin-sales-card-kicker,
+  .admin-sales-board-kicker {
+    margin: 0 0 10px;
+    color: #d9a441;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+  
+  .admin-sales-hero h2,
+  .admin-sales-card-head h3,
+  .admin-sales-board-head h3 {
+    margin: 0 0 10px;
+    font-size: 32px;
+    line-height: 1.15;
+  }
+  
+  .admin-sales-hero p {
+    margin: 0;
+    color: #d3d3d3;
+    line-height: 1.7;
+    max-width: 760px;
+  }
+  
+  .admin-sales-layout {
+    display: grid;
+    grid-template-columns: 360px minmax(0, 1fr);
+    gap: 22px;
+    margin-bottom: 22px;
+  }
+  
+  .admin-sales-boards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+  }
+  
+  .admin-sales-card-head,
+  .admin-sales-board-head {
+    margin-bottom: 20px;
+  }
+  
+  .admin-sales-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .admin-sales-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: #f1f1f1;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  
+  .admin-sales-form input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 191, 73, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 14px;
+  }
+  
+  .admin-sales-form input:focus {
+    outline: none;
+    border-color: rgba(255, 191, 73, 0.45);
+    box-shadow: 0 0 0 3px rgba(255, 191, 73, 0.08);
+  }
+  
+  .admin-sales-form-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .admin-sales-message {
+    margin: 4px 0 0;
+    color: #f3d28e;
+    line-height: 1.5;
+  }
+  
+  .admin-sales-empty {
+    padding: 20px;
+    border-radius: 16px;
+    background: rgba(255, 191, 73, 0.06);
+    border: 1px dashed rgba(255, 191, 73, 0.18);
+    color: #d3d3d3;
+    text-align: center;
+  }
+  
+  .admin-sales-rank-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .admin-sales-rank-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 191, 73, 0.12);
+  }
+  
+  .admin-sales-rank-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .admin-sales-rank-number {
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    background: rgba(255, 191, 73, 0.12);
+    color: #f3d28e;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  
+  .admin-sales-rank-name {
+    font-weight: 700;
+    color: #f3f3f3;
+  }
+  
+  .admin-sales-rank-score {
+    font-size: 22px;
+    font-weight: 800;
+    color: #91f0bb;
+  }
+  
+  .admin-sales-entry-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  
+  .admin-sales-entry-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 191, 73, 0.14);
+    background: rgba(255, 255, 255, 0.03);
+  }
+  
+  .admin-sales-entry-item h4 {
+    margin: 0 0 6px;
+    font-size: 18px;
+  }
+  
+  .admin-sales-entry-item p {
+    margin: 0;
+    color: #d3d3d3;
+  }
+  
+  .admin-sales-entry-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  
+  .admin-sales-entry-right strong {
+    font-size: 24px;
+    color: #91f0bb;
+  }
+  
+  .admin-sales-entry-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  @media (max-width: 1200px) {
+    .admin-sales-layout {
+      grid-template-columns: 1fr;
+    }
+  
+    .admin-sales-boards-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  @media (max-width: 900px) {
+    .admin-sales-page {
+      padding: 24px;
+    }
+  
+    .admin-sales-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+  
+  @media (max-width: 560px) {
+    .admin-sales-page {
+      padding: 18px;
+    }
+  
+    .admin-sales-logo {
+      width: 72px;
+      height: 72px;
+    }
+  
+    .admin-sales-brand h1 {
+      font-size: 26px;
+    }
+  
+    .admin-sales-hero,
+    .admin-sales-form-card,
+    .admin-sales-board-card,
+    .admin-sales-entries-card {
+      padding: 20px;
+    }
+  
+    .admin-sales-header-actions,
+    .admin-sales-form-actions,
+    .admin-sales-entry-actions {
+      width: 100%;
+    }
+  
+    .admin-sales-logout-btn,
+    .admin-sales-primary-btn,
+    .admin-sales-secondary-btn,
+    .admin-sales-small-btn {
+      width: 100%;
+    }
+  
+    .admin-sales-entry-item,
+    .admin-sales-entry-right {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }

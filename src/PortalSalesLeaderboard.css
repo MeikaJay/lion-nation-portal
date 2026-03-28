@@ -1,0 +1,254 @@
+.portal-sales-page {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at top, rgba(212, 153, 33, 0.18), transparent 30%),
+      linear-gradient(135deg, #040404 0%, #111111 48%, #1c1304 100%);
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+    padding: 40px;
+    box-sizing: border-box;
+  }
+  
+  .portal-sales-loading {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0a0a0a;
+    color: white;
+    font-size: 22px;
+    font-weight: 700;
+  }
+  
+  .portal-sales-header {
+    max-width: 1400px;
+    margin: 0 auto 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .portal-sales-brand {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .portal-sales-logo {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+  }
+  
+  .portal-sales-mini-title {
+    color: #d9a441;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 0 0 6px;
+  }
+  
+  .portal-sales-brand h1 {
+    margin: 0 0 6px;
+    font-size: 36px;
+    line-height: 1.1;
+  }
+  
+  .portal-sales-subtitle {
+    margin: 0;
+    color: #d3d3d3;
+    line-height: 1.5;
+  }
+  
+  .portal-sales-header-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .portal-sales-logout-btn,
+  .portal-sales-secondary-btn {
+    border: none;
+    border-radius: 14px;
+    padding: 12px 18px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+  
+  .portal-sales-logout-btn {
+    background: linear-gradient(135deg, #f5b234, #b97812);
+    color: #111;
+  }
+  
+  .portal-sales-secondary-btn {
+    background: rgba(255, 191, 73, 0.1);
+    color: #f3d28e;
+    border: 1px solid rgba(255, 191, 73, 0.18);
+  }
+  
+  .portal-sales-logout-btn:hover,
+  .portal-sales-secondary-btn:hover {
+    transform: translateY(-1px);
+  }
+  
+  .portal-sales-main {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
+  .portal-sales-hero,
+  .portal-sales-board-card {
+    background: rgba(15, 15, 15, 0.95);
+    border: 1px solid rgba(255, 191, 73, 0.18);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  }
+  
+  .portal-sales-hero {
+    margin-bottom: 22px;
+  }
+  
+  .portal-sales-tag,
+  .portal-sales-board-kicker {
+    margin: 0 0 10px;
+    color: #d9a441;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+  
+  .portal-sales-hero h2,
+  .portal-sales-board-head h3 {
+    margin: 0 0 10px;
+    font-size: 32px;
+    line-height: 1.15;
+  }
+  
+  .portal-sales-hero p {
+    margin: 0;
+    color: #d3d3d3;
+    line-height: 1.7;
+    max-width: 760px;
+  }
+  
+  .portal-sales-message {
+    color: #f3d28e;
+    margin: 0 0 14px;
+  }
+  
+  .portal-sales-boards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+  }
+  
+  .portal-sales-board-head {
+    margin-bottom: 20px;
+  }
+  
+  .portal-sales-empty {
+    padding: 20px;
+    border-radius: 16px;
+    background: rgba(255, 191, 73, 0.06);
+    border: 1px dashed rgba(255, 191, 73, 0.18);
+    color: #d3d3d3;
+    text-align: center;
+  }
+  
+  .portal-sales-rank-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .portal-sales-rank-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 191, 73, 0.12);
+  }
+  
+  .portal-sales-rank-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .portal-sales-rank-number {
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    background: rgba(255, 191, 73, 0.12);
+    color: #f3d28e;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  
+  .portal-sales-rank-name {
+    font-weight: 700;
+    color: #f3f3f3;
+  }
+  
+  .portal-sales-rank-score {
+    font-size: 22px;
+    font-weight: 800;
+    color: #91f0bb;
+  }
+  
+  @media (max-width: 1200px) {
+    .portal-sales-boards-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  @media (max-width: 900px) {
+    .portal-sales-page {
+      padding: 24px;
+    }
+  
+    .portal-sales-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+  
+  @media (max-width: 560px) {
+    .portal-sales-page {
+      padding: 18px;
+    }
+  
+    .portal-sales-logo {
+      width: 72px;
+      height: 72px;
+    }
+  
+    .portal-sales-brand h1 {
+      font-size: 26px;
+    }
+  
+    .portal-sales-hero,
+    .portal-sales-board-card {
+      padding: 20px;
+    }
+  
+    .portal-sales-header-actions {
+      width: 100%;
+    }
+  
+    .portal-sales-logout-btn,
+    .portal-sales-secondary-btn {
+      width: 100%;
+    }
+  }

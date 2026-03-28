@@ -1,0 +1,325 @@
+.admin-content-page {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at top, rgba(212, 153, 33, 0.18), transparent 30%),
+      linear-gradient(135deg, #040404 0%, #111111 48%, #1c1304 100%);
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+    padding: 40px;
+    box-sizing: border-box;
+  }
+  
+  .admin-content-loading {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0a0a0a;
+    color: white;
+    font-size: 22px;
+    font-weight: 700;
+  }
+  
+  .admin-content-header {
+    max-width: 1400px;
+    margin: 0 auto 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .admin-content-brand {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .admin-content-logo {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+  }
+  
+  .admin-content-mini-title {
+    color: #d9a441;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 0 0 6px;
+  }
+  
+  .admin-content-brand h1 {
+    margin: 0 0 6px;
+    font-size: 36px;
+    line-height: 1.1;
+  }
+  
+  .admin-content-subtitle {
+    margin: 0;
+    color: #d3d3d3;
+    line-height: 1.5;
+  }
+  
+  .admin-content-header-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .admin-content-logout-btn,
+  .admin-content-primary-btn,
+  .admin-content-secondary-btn {
+    border: none;
+    border-radius: 14px;
+    padding: 12px 18px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+  
+  .admin-content-logout-btn,
+  .admin-content-primary-btn {
+    background: linear-gradient(135deg, #f5b234, #b97812);
+    color: #111;
+  }
+  
+  .admin-content-secondary-btn {
+    background: rgba(255, 191, 73, 0.1);
+    color: #f3d28e;
+    border: 1px solid rgba(255, 191, 73, 0.18);
+  }
+  
+  .admin-content-secondary-btn.danger {
+    background: rgba(255, 86, 86, 0.12);
+    color: #ffb1b1;
+    border: 1px solid rgba(255, 86, 86, 0.22);
+  }
+  
+  .admin-content-logout-btn:hover,
+  .admin-content-primary-btn:hover,
+  .admin-content-secondary-btn:hover {
+    transform: translateY(-1px);
+  }
+  
+  .admin-content-main {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
+  .admin-content-hero {
+    background: rgba(15, 15, 15, 0.95);
+    border: 1px solid rgba(255, 191, 73, 0.2);
+    border-radius: 26px;
+    padding: 32px;
+    margin-bottom: 28px;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.32);
+  }
+  
+  .admin-content-tag {
+    margin: 0 0 10px;
+    color: #d9a441;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  
+  .admin-content-hero h2 {
+    margin: 0 0 12px;
+    font-size: 36px;
+    line-height: 1.1;
+  }
+  
+  .admin-content-hero p {
+    margin: 0;
+    color: #d3d3d3;
+    line-height: 1.6;
+    max-width: 760px;
+  }
+  
+  .admin-content-layout {
+    display: grid;
+    grid-template-columns: 460px minmax(0, 1fr);
+    gap: 22px;
+  }
+  
+  .admin-content-form-card,
+  .admin-content-preview-card {
+    background: rgba(15, 15, 15, 0.95);
+    border: 1px solid rgba(255, 191, 73, 0.18);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  }
+  
+  .admin-content-card-head {
+    margin-bottom: 20px;
+  }
+  
+  .admin-content-card-kicker {
+    margin: 0 0 8px;
+    color: #d9a441;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  
+  .admin-content-card-head h3 {
+    margin: 0;
+    font-size: 24px;
+  }
+  
+  .admin-content-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .admin-content-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: #f1f1f1;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  
+  .admin-content-form input,
+  .admin-content-form textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 191, 73, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 14px;
+  }
+  
+  .admin-content-form textarea {
+    min-height: 180px;
+    resize: vertical;
+  }
+  
+  .admin-content-form input:focus,
+  .admin-content-form textarea:focus {
+    outline: none;
+    border-color: rgba(255, 191, 73, 0.45);
+    box-shadow: 0 0 0 3px rgba(255, 191, 73, 0.08);
+  }
+  
+  .admin-content-checkbox {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 10px !important;
+    color: #d3d3d3 !important;
+    font-weight: 500 !important;
+  }
+  
+  .admin-content-checkbox input {
+    width: auto;
+    accent-color: #d9a441;
+  }
+  
+  .admin-content-form-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .admin-content-message {
+    margin: 4px 0 0;
+    color: #f3d28e;
+    line-height: 1.5;
+  }
+  
+  .announcement-preview {
+    background: rgba(255, 191, 73, 0.08);
+    border: 1px solid rgba(255, 191, 73, 0.18);
+    border-radius: 20px;
+    padding: 24px;
+  }
+  
+  .announcement-preview-label {
+    margin: 0 0 10px;
+    color: #d9a441;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  
+  .announcement-preview h4 {
+    margin: 0 0 12px;
+    font-size: 24px;
+    line-height: 1.2;
+  }
+  
+  .announcement-preview-body {
+    margin: 0;
+    color: #e5e5e5;
+    line-height: 1.7;
+    white-space: pre-wrap;
+  }
+  
+  @media (max-width: 1100px) {
+    .admin-content-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  @media (max-width: 900px) {
+    .admin-content-page {
+      padding: 24px;
+    }
+  
+    .admin-content-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  
+    .admin-content-brand h1 {
+      font-size: 30px;
+    }
+  
+    .admin-content-hero h2 {
+      font-size: 30px;
+    }
+  }
+  
+  @media (max-width: 560px) {
+    .admin-content-page {
+      padding: 18px;
+    }
+  
+    .admin-content-logo {
+      width: 72px;
+      height: 72px;
+    }
+  
+    .admin-content-brand h1 {
+      font-size: 26px;
+    }
+  
+    .admin-content-hero,
+    .admin-content-form-card,
+    .admin-content-preview-card {
+      padding: 20px;
+    }
+  
+    .admin-content-header-actions,
+    .admin-content-form-actions {
+      width: 100%;
+    }
+  
+    .admin-content-logout-btn,
+    .admin-content-primary-btn,
+    .admin-content-secondary-btn {
+      width: 100%;
+    }
+  }

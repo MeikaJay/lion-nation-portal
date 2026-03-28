@@ -1,0 +1,252 @@
+.admin-focus-shell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    background:
+      radial-gradient(circle at top, rgba(212, 153, 33, 0.14), transparent 28%),
+      linear-gradient(135deg, #040404 0%, #0d0d0d 48%, #171104 100%);
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  
+  .admin-focus-loading {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0a0a0a;
+    color: white;
+    font-size: 22px;
+    font-weight: 700;
+  }
+  
+  .admin-focus-sidebar {
+    min-height: 100vh;
+    background: rgba(7, 7, 7, 0.96);
+    border-right: 1px solid rgba(255, 191, 73, 0.12);
+    padding: 24px 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 24px;
+    box-sizing: border-box;
+  }
+  
+  .admin-focus-sidebar-top {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .admin-focus-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  
+  .admin-focus-logo {
+    width: 62px;
+    height: 62px;
+    object-fit: contain;
+  }
+  
+  .admin-focus-kicker {
+    margin: 0 0 6px;
+    color: #d9a441;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  
+  .admin-focus-brand h2 {
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.1;
+    color: white;
+  }
+  
+  .admin-focus-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .admin-focus-nav-btn,
+  .admin-focus-logout,
+  .admin-focus-save-btn {
+    border: none;
+    border-radius: 14px;
+    font-weight: 800;
+    font-size: 14px;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .admin-focus-nav-btn {
+    width: 100%;
+    text-align: left;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 191, 73, 0.1);
+    color: #f3f3f3;
+  }
+  
+  .admin-focus-nav-btn:hover,
+  .admin-focus-nav-btn.active {
+    transform: translateY(-1px);
+    background: rgba(255, 191, 73, 0.12);
+    border-color: rgba(255, 191, 73, 0.2);
+  }
+  
+  .admin-focus-logout,
+  .admin-focus-save-btn {
+    background: linear-gradient(135deg, #f5b234, #b97812);
+    color: #111;
+    padding: 14px 18px;
+    box-shadow: 0 10px 24px rgba(245, 178, 52, 0.16);
+  }
+  
+  .admin-focus-content {
+    padding: 32px 36px 40px;
+    box-sizing: border-box;
+    min-width: 0;
+  }
+  
+  .admin-focus-page-head {
+    margin-bottom: 28px;
+  }
+  
+  .admin-focus-page-head h1 {
+    margin: 0;
+    color: white;
+    font-size: 44px;
+    line-height: 1.05;
+  }
+  
+  .admin-focus-subtitle {
+    margin: 10px 0 0;
+    color: #cfcfcf;
+    font-size: 16px;
+    line-height: 1.5;
+    max-width: 820px;
+  }
+  
+  .admin-focus-status {
+    border-radius: 18px;
+    padding: 16px 18px;
+    margin-bottom: 22px;
+  }
+  
+  .admin-focus-status.success {
+    background: rgba(30, 100, 50, 0.28);
+    color: #c9ffd9;
+    border: 1px solid rgba(120, 255, 160, 0.2);
+  }
+  
+  .admin-focus-status.error {
+    background: rgba(120, 20, 20, 0.28);
+    color: #ffd0d0;
+    border: 1px solid rgba(255, 120, 120, 0.24);
+  }
+  
+  .admin-focus-card {
+    width: 100%;
+    max-width: 1180px;
+    padding: 30px;
+    background: rgba(18, 18, 18, 0.96);
+    border: 1px solid rgba(255, 191, 73, 0.14);
+    border-radius: 24px;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
+  }
+  
+  .admin-focus-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 18px;
+  }
+  
+  .admin-focus-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  
+  .admin-focus-field label {
+    color: #d9a441;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  
+  .admin-focus-field input,
+  .admin-focus-field textarea {
+    width: 100%;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 191, 73, 0.14);
+    background: rgba(255, 255, 255, 0.04);
+    color: white;
+    padding: 16px;
+    font-size: 15px;
+    box-sizing: border-box;
+    font-family: inherit;
+  }
+  
+  .admin-focus-field input::placeholder,
+  .admin-focus-field textarea::placeholder {
+    color: #bcbcbc;
+  }
+  
+  .admin-focus-field input:focus,
+  .admin-focus-field textarea:focus {
+    outline: none;
+    border-color: rgba(255, 191, 73, 0.34);
+    box-shadow: 0 0 0 3px rgba(255, 191, 73, 0.08);
+  }
+  
+  .admin-focus-actions {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 8px;
+  }
+  
+  @media (max-width: 1100px) {
+    .admin-focus-shell {
+      grid-template-columns: 1fr;
+    }
+  
+    .admin-focus-sidebar {
+      min-height: auto;
+      border-right: none;
+      border-bottom: 1px solid rgba(255, 191, 73, 0.12);
+    }
+  
+    .admin-focus-content {
+      padding: 24px;
+    }
+  
+    .admin-focus-card {
+      max-width: none;
+    }
+  
+    .admin-focus-form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  @media (max-width: 700px) {
+    .admin-focus-content {
+      padding: 20px 16px 28px;
+    }
+  
+    .admin-focus-page-head h1 {
+      font-size: 34px;
+    }
+  
+    .admin-focus-card {
+      padding: 22px 18px;
+    }
+  }

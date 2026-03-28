@@ -1,0 +1,337 @@
+.portal-bingo-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgba(212, 153, 33, 0.18), transparent 30%),
+    linear-gradient(135deg, #040404 0%, #111111 48%, #1c1304 100%);
+  color: white;
+  font-family: Arial, Helvetica, sans-serif;
+  padding: 32px;
+  box-sizing: border-box;
+}
+
+.portal-bingo-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0a0a0a;
+  color: white;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.portal-bingo-header {
+  max-width: 1400px;
+  margin: 0 auto 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.portal-bingo-brand {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.portal-bingo-logo {
+  width: 88px;
+  height: 88px;
+  object-fit: contain;
+}
+
+.portal-bingo-mini-title {
+  color: #d9a441;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin: 0 0 6px;
+}
+
+.portal-bingo-brand h1 {
+  margin: 0 0 6px;
+  font-size: 34px;
+  line-height: 1.1;
+}
+
+.portal-bingo-subtitle {
+  margin: 0;
+  color: #d3d3d3;
+  line-height: 1.5;
+}
+
+.portal-bingo-header-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.portal-bingo-logout-btn,
+.portal-bingo-secondary-btn {
+  border: none;
+  border-radius: 14px;
+  padding: 12px 18px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.portal-bingo-logout-btn {
+  background: linear-gradient(135deg, #f5b234, #b97812);
+  color: #111;
+}
+
+.portal-bingo-secondary-btn {
+  background: rgba(255, 191, 73, 0.1);
+  color: #f3d28e;
+  border: 1px solid rgba(255, 191, 73, 0.18);
+}
+
+.portal-bingo-logout-btn:hover,
+.portal-bingo-secondary-btn:hover,
+.portal-bingo-square:hover {
+  transform: translateY(-1px);
+}
+
+.portal-bingo-main {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.portal-bingo-top-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.8fr);
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.portal-bingo-hero,
+.portal-bingo-empty-card,
+.portal-bingo-complete-card,
+.portal-bingo-winner-card {
+  background: rgba(15, 15, 15, 0.95);
+  border: 1px solid rgba(255, 191, 73, 0.18);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+}
+
+.portal-bingo-tag,
+.portal-bingo-empty-label,
+.portal-bingo-complete-label,
+.portal-bingo-winner-label {
+  margin: 0 0 10px;
+  color: #d9a441;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.portal-bingo-hero h2,
+.portal-bingo-empty-card h2,
+.portal-bingo-complete-card h3,
+.portal-bingo-winner-card h3 {
+  margin: 0 0 10px;
+  font-size: 30px;
+  line-height: 1.15;
+}
+
+.portal-bingo-hero p,
+.portal-bingo-empty-card p,
+.portal-bingo-complete-card p,
+.portal-bingo-winner-card p {
+  margin: 0;
+  color: #d3d3d3;
+  line-height: 1.7;
+}
+
+.portal-bingo-progress-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.portal-bingo-progress-pill {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 191, 73, 0.12);
+  border: 1px solid rgba(255, 191, 73, 0.2);
+  color: #f3d28e;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.portal-bingo-progress-pill.complete {
+  background: rgba(64, 189, 120, 0.14);
+  border-color: rgba(64, 189, 120, 0.24);
+  color: #91f0bb;
+}
+
+.portal-bingo-message {
+  color: #f3d28e;
+  margin: 0 0 16px;
+}
+
+.portal-bingo-complete-card {
+  margin-bottom: 18px;
+}
+
+.portal-bingo-board-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.portal-bingo-board {
+  width: 100%;
+  max-width: 1100px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.portal-bingo-square {
+  min-height: 165px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 191, 73, 0.18);
+  background:
+    linear-gradient(180deg, rgba(255, 191, 73, 0.06), rgba(255, 255, 255, 0.02)),
+    rgba(15, 15, 15, 0.96);
+  color: white;
+  padding: 14px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.portal-bingo-square.completed {
+  background:
+    linear-gradient(180deg, rgba(64, 189, 120, 0.18), rgba(64, 189, 120, 0.08)),
+    rgba(15, 15, 15, 0.96);
+  border-color: rgba(64, 189, 120, 0.34);
+}
+
+.portal-bingo-square-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(255, 191, 73, 0.14);
+  color: #f3d28e;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.portal-bingo-square.completed .portal-bingo-square-number {
+  background: rgba(64, 189, 120, 0.22);
+  color: #b9ffd3;
+}
+
+.portal-bingo-square-text {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #f3f3f3;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.portal-bingo-square-status {
+  font-size: 11px;
+  font-weight: 800;
+  color: #d9a441;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.portal-bingo-square.completed .portal-bingo-square-status {
+  color: #91f0bb;
+}
+
+@media (max-width: 1200px) {
+  .portal-bingo-board {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1000px) {
+  .portal-bingo-top-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-bingo-board {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .portal-bingo-page {
+    padding: 24px;
+  }
+
+  .portal-bingo-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .portal-bingo-brand h1 {
+    font-size: 30px;
+  }
+}
+
+@media (max-width: 700px) {
+  .portal-bingo-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .portal-bingo-page {
+    padding: 18px;
+  }
+
+  .portal-bingo-logo {
+    width: 72px;
+    height: 72px;
+  }
+
+  .portal-bingo-brand h1 {
+    font-size: 26px;
+  }
+
+  .portal-bingo-hero,
+  .portal-bingo-empty-card,
+  .portal-bingo-complete-card,
+  .portal-bingo-winner-card {
+    padding: 20px;
+  }
+
+  .portal-bingo-board {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-bingo-header-actions {
+    width: 100%;
+  }
+
+  .portal-bingo-logout-btn,
+  .portal-bingo-secondary-btn {
+    width: 100%;
+  }
+
+  .portal-bingo-square {
+    min-height: 150px;
+  }
+}
