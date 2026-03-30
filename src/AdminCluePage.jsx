@@ -10,116 +10,209 @@ function getToday() {
 export default function AdminCluePage() {
   const navigate = useNavigate();
 
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+
+  const [clueId, setClueId] = useState(null);
   const [clueDate, setClueDate] = useState(getToday());
   const [clueTitle, setClueTitle] = useState("");
   const [clueText, setClueText] = useState("");
-  const [answerText, setAnswerText] = useState("");
+  const [correctAnswer, setCorrectAnswer] = useState("");
   const [maxAttempts, setMaxAttempts] = useState(3);
-  const [unlocksWheel, setUnlocksWheel] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [loadingClue, setLoadingClue] = useState(false);
-  const [statusMessage, setStatusMessage] = useState("");
+  const [isActive, setIsActive] = useState(true);
 
   useEffect(() => {
-    loadClueForDate(clueDate);
-  }, [clueDate]);
+    loadClue();
+  }, []);
 
-  const loadClueForDate = async (date) => {
-    setLoadingClue(true);
+  async function loadClue() {
+    setLoading(true);
     setStatusMessage("");
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      navigate("/");
+      return;
+    }
 
     const { data, error } = await supabase
       .from("clues")
       .select("*")
-      .eq("clue_date", date)
+      .eq("clue_date", getToday())
       .maybeSingle();
 
-    if (error) {
-      setStatusMessage("Could not load clue for that date.");
-      setLoadingClue(false);
+    if (error && error.code !== "PGRST116") {
+      setStatusMessage(`Could not load clue: ${error.message}`);
+      setLoading(false);
       return;
     }
 
     if (data) {
+      setClueId(data.id || null);
+      setClueDate(data.clue_date || getToday());
       setClueTitle(data.clue_title || "");
       setClueText(data.clue_text || "");
-      setAnswerText(data.answer_text || "");
-      setMaxAttempts(data.max_attempts ?? 3);
-      setUnlocksWheel(Boolean(data.unlocks_wheel));
+      setCorrectAnswer(data.correct_answer || "");
+      setMaxAttempts(data.max_attempts || 3);
+      setIsActive(Boolean(data.is_active));
     } else {
+      setClueId(null);
+      setClueDate(getToday());
       setClueTitle("");
       setClueText("");
-      setAnswerText("");
+      setCorrectAnswer("");
       setMaxAttempts(3);
-      setUnlocksWheel(true);
-    }
-
-    setLoadingClue(false);
-  };
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-
-    if (!clueDate || !clueText.trim() || !answerText.trim()) {
-      setStatusMessage("Please fill out the date, clue, and answer.");
-      return;
-    }
-
-    setLoading(true);
-    setStatusMessage("");
-
-    const monthKey = clueDate.slice(0, 7);
-
-    const { error } = await supabase.from("clues").upsert(
-      {
-        clue_date: clueDate,
-        month_key: monthKey,
-        clue_type: "daily",
-        clue_title: clueTitle.trim(),
-        clue_text: clueText.trim(),
-        answer_text: answerText.trim().toLowerCase(),
-        max_attempts: Number(maxAttempts) || 3,
-        unlocks_wheel: unlocksWheel,
-        is_active: true,
-      },
-      { onConflict: "clue_date" }
-    );
-
-    if (error) {
-      setStatusMessage(`Save failed: ${error.message}`);
-    } else {
-      setStatusMessage("Clue saved successfully.");
+      setIsActive(true);
     }
 
     setLoading(false);
-  };
+  }
+
+  async function handleSave(e) {
+    e.preventDefault();
+    setSaving(true);
+    setStatusMessage("");
+
+    try {
+      const payload = {
+        clue_date: clueDate,
+        clue_title: clueTitle.trim(),
+        clue_text: clueText.trim(),
+        correct_answer: correctAnswer.trim(),
+        max_attempts: Number(maxAttempts) || 3,
+        is_active: isActive,
+      };
+
+      let error;
+
+      if (clueId) {
+        const result = await supabase
+          .from("clues")
+          .update(payload)
+          .eq("id", clueId);
+
+        error = result.error;
+      } else {
+        const result = await supabase
+          .from("clues")
+          .insert([payload])
+          .select()
+          .single();
+
+        error = result.error;
+
+        if (result.data?.id) {
+          setClueId(result.data.id);
+        }
+      }
+
+      if (error) {
+        throw error;
+      }
+
+      setStatusMessage("Daily clue saved successfully.");
+      await loadClue();
+    } catch (error) {
+      setStatusMessage(`Save failed: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!clueId) {
+      setStatusMessage("There is no clue to delete.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Delete today’s clue and all related attempts, unlocks, and prize results?"
+    );
+
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setStatusMessage("");
+
+    try {
+      const { error: prizeError } = await supabase
+        .from("prize_results")
+        .delete()
+        .eq("clue_id", clueId);
+
+      if (prizeError) throw prizeError;
+
+      const { error: unlockError } = await supabase
+        .from("clue_unlocks")
+        .delete()
+        .eq("clue_id", clueId);
+
+      if (unlockError) throw unlockError;
+
+      const { error: attemptsError } = await supabase
+        .from("clue_attempts")
+        .delete()
+        .eq("clue_id", clueId);
+
+      if (attemptsError) throw attemptsError;
+
+      const { error: clueError } = await supabase
+        .from("clues")
+        .delete()
+        .eq("id", clueId);
+
+      if (clueError) throw clueError;
+
+      setStatusMessage("Daily clue deleted successfully.");
+
+      setClueId(null);
+      setClueDate(getToday());
+      setClueTitle("");
+      setClueText("");
+      setCorrectAnswer("");
+      setMaxAttempts(3);
+      setIsActive(true);
+    } catch (error) {
+      setStatusMessage(`Delete failed: ${error.message}`);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  if (loading) {
+    return <div className="admin-clue-page">Loading clue page...</div>;
+  }
 
   return (
     <div className="admin-clue-page">
       <header className="admin-clue-header">
         <div>
-          <p className="admin-clue-kicker">Lion Nation Admin</p>
-          <h1>Manage Daily Clue</h1>
+          <p className="admin-clue-kicker">Admin Control</p>
+          <h1>Daily Clue</h1>
           <p className="admin-clue-subtitle">
-            Create or update the clue agents will see for a specific day.
+            Post, update, or delete the clue for today.
           </p>
         </div>
 
-        <div className="admin-clue-actions">
-          <button
-            className="admin-clue-secondary-btn"
-            onClick={() => navigate("/admin")}
-            type="button"
-          >
-            Back to Dashboard
-          </button>
-        </div>
+        <button
+          className="admin-clue-secondary-btn"
+          onClick={() => navigate("/admin")}
+        >
+          Back to Admin
+        </button>
       </header>
 
       <div className="admin-clue-layout">
         <section className="admin-clue-card">
           <div className="admin-clue-card-top">
-            <span className="admin-clue-badge">Clue Setup</span>
+            <span className="admin-clue-badge">
+              {clueId ? "Editing Today’s Clue" : "Create Today’s Clue"}
+            </span>
           </div>
 
           <form className="admin-clue-form" onSubmit={handleSave}>
@@ -136,18 +229,18 @@ export default function AdminCluePage() {
               Clue Title
               <input
                 type="text"
-                placeholder="Example: Friday Challenge"
                 value={clueTitle}
                 onChange={(e) => setClueTitle(e.target.value)}
+                placeholder="Example: Daily Clue"
               />
             </label>
 
             <label>
               Clue Text
               <textarea
-                placeholder="Type the clue agents will see..."
                 value={clueText}
                 onChange={(e) => setClueText(e.target.value)}
+                placeholder="Enter today’s clue..."
               />
             </label>
 
@@ -155,9 +248,9 @@ export default function AdminCluePage() {
               Correct Answer
               <input
                 type="text"
-                placeholder="Type the correct answer..."
-                value={answerText}
-                onChange={(e) => setAnswerText(e.target.value)}
+                value={correctAnswer}
+                onChange={(e) => setCorrectAnswer(e.target.value)}
+                placeholder="Enter the correct answer"
               />
             </label>
 
@@ -166,7 +259,6 @@ export default function AdminCluePage() {
               <input
                 type="number"
                 min="1"
-                max="10"
                 value={maxAttempts}
                 onChange={(e) => setMaxAttempts(e.target.value)}
               />
@@ -175,14 +267,27 @@ export default function AdminCluePage() {
             <label className="admin-clue-checkbox">
               <input
                 type="checkbox"
-                checked={unlocksWheel}
-                onChange={(e) => setUnlocksWheel(e.target.checked)}
+                checked={isActive}
+                onChange={(e) => setIsActive(e.target.checked)}
               />
-              Unlock prize wheel if answered correctly
+              Active
             </label>
 
-            <button className="admin-clue-save-btn" type="submit">
-              {loading ? "Saving..." : "Save Clue"}
+            <button
+              type="submit"
+              className="admin-clue-save-btn"
+              disabled={saving}
+            >
+              {saving ? "Saving..." : "Save Clue"}
+            </button>
+
+            <button
+              type="button"
+              className="admin-clue-delete-btn"
+              onClick={handleDelete}
+              disabled={deleting || !clueId}
+            >
+              {deleting ? "Deleting..." : "Delete Today’s Clue"}
             </button>
           </form>
 
@@ -191,26 +296,21 @@ export default function AdminCluePage() {
           ) : null}
         </section>
 
-        <section className="admin-clue-preview-card">
-          <div className="admin-clue-card-top">
-            <span className="admin-clue-badge">Agent Preview</span>
-          </div>
-
-          <h3>{clueTitle || "No title yet"}</h3>
+        <aside className="admin-clue-preview-card">
+          <p className="admin-clue-kicker">Preview</p>
+          <h3>{clueTitle || "Daily Clue"}</h3>
           <p className="admin-clue-preview-text">
-            {loadingClue
-              ? "Loading clue for selected date..."
-              : clueText || "Your clue preview will show here."}
+            {clueText || "Your clue preview will show here."}
           </p>
 
           <div className="admin-clue-preview-meta">
-            <div className="admin-clue-pill">Date: {clueDate}</div>
-            <div className="admin-clue-pill">Attempts: {maxAttempts}</div>
-            <div className="admin-clue-pill">
-              Prize Wheel: {unlocksWheel ? "Yes" : "No"}
-            </div>
+            <span className="admin-clue-pill">Date: {clueDate}</span>
+            <span className="admin-clue-pill">Attempts: {maxAttempts}</span>
+            <span className="admin-clue-pill">
+              {isActive ? "Active" : "Inactive"}
+            </span>
           </div>
-        </section>
+        </aside>
       </div>
     </div>
   );
