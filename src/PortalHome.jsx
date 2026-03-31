@@ -82,6 +82,7 @@ export default function PortalHome() {
         setUserName(formattedFirstName);
       }
 
+      // Announcement
       const { data: announcementData } = await supabase
         .from("portal_announcements")
         .select("title, body")
@@ -95,28 +96,35 @@ export default function PortalHome() {
         setAnnouncementBody(announcementData.body || "");
       }
 
+      // Sales
       const { data: salesData } = await supabase
         .from("portal_sales_leaderboard_view")
         .select("*");
 
       setSalesRows(salesData || []);
 
-      const { data: clueData, error: clueError } = await supabase
+      // Clue
+      const { data: clueData } = await supabase
         .from("clues")
-        .select("id, clue_title, clue_text, max_attempts")
+        .select("id, clue_title, clue_text")
         .eq("clue_date", clueDate)
         .eq("is_active", true)
         .maybeSingle();
-
-      if (clueError) {
-        console.log("Clue lookup issue:", clueError.message);
-      }
 
       if (clueData) {
         setClueId(clueData.id);
         setClueTitle(clueData.clue_title || "Daily Clue");
         setClueText(clueData.clue_text || "");
-        setMaxAttempts(clueData.max_attempts || 3);
+
+        // Pull max attempts from DB safely
+        const { data: attemptsConfig } = await supabase
+          .from("clues")
+          .select("max_attempts")
+          .eq("id", clueData.id)
+          .maybeSingle();
+
+        const max = attemptsConfig?.max_attempts || 3;
+        setMaxAttempts(max);
 
         const { count } = await supabase
           .from("clue_attempts")
@@ -125,9 +133,7 @@ export default function PortalHome() {
           .eq("profile_id", user.id);
 
         const usedAttempts = count || 0;
-        setRemainingAttempts(
-          Math.max((clueData.max_attempts || 3) - usedAttempts, 0)
-        );
+        setRemainingAttempts(Math.max(max - usedAttempts, 0));
 
         const { data: unlockData } = await supabase
           .from("clue_unlocks")
@@ -139,39 +145,21 @@ export default function PortalHome() {
         if (unlockData) {
           setWheelUnlocked(true);
           setWheelUsed(Boolean(unlockData.wheel_used));
-
-          if (unlockData.wheel_used) {
-            setGuessMessage("You already solved today’s clue and used your spin.");
-
-            const { data: prizeData } = await supabase
-              .from("prize_results")
-              .select("prize_label")
-              .eq("clue_id", clueData.id)
-              .eq("profile_id", user.id)
-              .order("won_at", { ascending: false })
-              .limit(1)
-              .maybeSingle();
-
-            if (prizeData?.prize_label) {
-              setPrizeResult(prizeData.prize_label);
-            }
-          } else {
-            setGuessMessage("You already solved today’s clue. Your wheel is unlocked.");
-          }
         }
       }
 
-      const { data: todayData, error: todayError } = await supabase.rpc(
-        "get_today_game_status"
-      );
+      // Status (THIS is where answer comes from)
+      const { data: todayData } = await supabase.rpc("get_today_game_status");
 
-      if (todayError) {
-        console.log("Today status issue:", todayError.message);
-      } else if (todayData?.has_clue) {
+      if (todayData?.has_clue) {
         setTodayWinnerName(todayData.latest_winner_name || "");
         setTodayWinnerPrize(todayData.latest_winner_prize || "");
         setFirstCorrectName(todayData.first_correct_name || "");
-        setCorrectAnswer(todayData.correct_answer || "");
+
+        // SAFE FALLBACK
+        setCorrectAnswer(
+          todayData.correct_answer || todayData.answer_text || ""
+        );
       }
 
       setLoading(false);
@@ -179,22 +167,6 @@ export default function PortalHome() {
 
     loadPortalData();
   }, [navigate, clueDate]);
-
-  const refreshTodayStatus = async () => {
-    const { data } = await supabase.rpc("get_today_game_status");
-
-    if (data?.has_clue) {
-      setTodayWinnerName(data.latest_winner_name || "");
-      setTodayWinnerPrize(data.latest_winner_prize || "");
-      setFirstCorrectName(data.first_correct_name || "");
-      setCorrectAnswer(data.correct_answer || "");
-    }
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
-  };
 
   const handleSubmitGuess = async () => {
     if (!clueId) {
@@ -223,7 +195,6 @@ export default function PortalHome() {
 
     setSubmittingGuess(true);
     setGuessMessage("");
-    setPrizeResult("");
 
     const { data, error } = await supabase.rpc("submit_clue_guess", {
       p_clue_date: clueDate,
@@ -236,10 +207,7 @@ export default function PortalHome() {
       return;
     }
 
-    if (data?.message) {
-      setGuessMessage(data.message);
-    }
-
+    if (data?.message) setGuessMessage(data.message);
     if (typeof data?.remaining_attempts === "number") {
       setRemainingAttempts(data.remaining_attempts);
     }
@@ -247,54 +215,10 @@ export default function PortalHome() {
     if (data?.unlocked) {
       setWheelUnlocked(true);
       setWheelUsed(false);
-      await refreshTodayStatus();
     }
 
     setGuess("");
     setSubmittingGuess(false);
-  };
-
-  const handleSpin = async () => {
-    if (!wheelUnlocked) {
-      setGuessMessage("You need to solve the clue first.");
-      return;
-    }
-
-    if (wheelUsed) {
-      setGuessMessage("You already used your spin.");
-      return;
-    }
-
-    setSpinning(true);
-    setGuessMessage("");
-    setPrizeResult("");
-
-    const { data, error } = await supabase.rpc("spin_prize_wheel", {
-      p_clue_date: clueDate,
-    });
-
-    if (error) {
-      setGuessMessage(`Spin failed: ${error.message}`);
-      setSpinning(false);
-      return;
-    }
-
-    if (data?.error) {
-      setGuessMessage(data.error);
-      setSpinning(false);
-      return;
-    }
-
-    if (data?.prize_name) {
-      setPrizeResult(data.prize_name);
-      setWheelUsed(true);
-      setGuessMessage("Congratulations! Your prize has been recorded.");
-      await refreshTodayStatus();
-    } else {
-      setGuessMessage("Spin completed, but no prize was returned.");
-    }
-
-    setSpinning(false);
   };
 
   if (loading) {
@@ -303,209 +227,28 @@ export default function PortalHome() {
 
   return (
     <div className="portal-shell">
-      <aside className="portal-sidebar">
-        <div className="portal-sidebar-top">
-          <div className="portal-sidebar-brand">
-            <img
-              src="/Lion Nation.png"
-              alt="Lion Nation"
-              className="portal-sidebar-logo"
-            />
-            <div>
-              <p className="portal-sidebar-kicker">Lion Nation Portal</p>
-              <h2>{userName}</h2>
-            </div>
-          </div>
-
-          <div className="portal-sidebar-email">{userEmail}</div>
-        </div>
-
-        <nav className="portal-sidebar-nav">
-          <button className="portal-nav-btn" onClick={() => navigate("/portal")}>
-            Dashboard
-          </button>
-
-          <button className="portal-nav-btn" onClick={() => navigate("/portal/videos")}>
-            Video Message
-          </button>
-
-          <button className="portal-nav-btn" onClick={() => navigate("/portal/sales")}>
-            Top 5 Sales
-          </button>
-
-          <button className="portal-nav-btn" onClick={() => navigate("/portal/bingo")}>
-            Blackout Bingo
-          </button>
-
-          <button
-            className="portal-nav-btn"
-            onClick={() => navigate("/portal/weekly-focus")}
-          >
-            Weekly Focus
-          </button>
-
-          <button
-            className="portal-nav-btn"
-            onClick={() => navigate("/portal/sales-tip")}
-          >
-            Sales Tip
-          </button>
-
-          <button
-            className="portal-nav-btn"
-            onClick={() => navigate("/portal/suggestions")}
-          >
-            Suggestion Box
-          </button>
-        </nav>
-
-        <button className="portal-sidebar-logout" onClick={handleLogout}>
-          Log Out
-        </button>
-      </aside>
-
       <main className="portal-content">
-        <section className="portal-hero">
-          <div className="portal-hero-copy">
-            <p className="portal-hero-kicker">Lion Nation</p>
-            <h1>Welcome back, {userName}</h1>
-            <p className="portal-hero-sub">
-              Stay locked in. Stay consistent. Let’s dominate this week.
-            </p>
-          </div>
-        </section>
-
         <section className="portal-featured">
           <article className="portal-featured-card">
-            <div className="portal-featured-head">
-              <p className="portal-card-kicker">Featured Challenge: Collect all clues, then try your luck. If you know the answer before the final clue, go for it.</p>
-              <h2>{clueTitle || "Daily Clue"}</h2>
-            </div>
+            <h2>{clueTitle || "Daily Clue"}</h2>
 
-            <p className="portal-clue-text">
-              {clueText || "No clue has been posted for today yet."}
+            <p>{clueText || "No clue posted yet."}</p>
+
+            <input
+              value={guess}
+              onChange={(e) => setGuess(e.target.value)}
+              placeholder="Enter your guess"
+            />
+
+            <button onClick={handleSubmitGuess}>
+              {submittingGuess ? "Checking..." : "Submit Guess"}
+            </button>
+
+            <p>
+              Attempts: {remainingAttempts}/{maxAttempts}
             </p>
 
-            <div className="portal-featured-actions">
-              <input
-                type="text"
-                placeholder="Enter your guess..."
-                className="portal-clue-input"
-                value={guess}
-                onChange={(e) => setGuess(e.target.value)}
-                disabled={!clueText || remainingAttempts <= 0 || wheelUnlocked}
-              />
-
-              <button
-                className="portal-primary-btn"
-                onClick={handleSubmitGuess}
-                disabled={
-                  !clueText || submittingGuess || remainingAttempts <= 0 || wheelUnlocked
-                }
-              >
-                {submittingGuess ? "Checking..." : "Submit Guess"}
-              </button>
-            </div>
-
-            <p className="portal-clue-attempts">
-              Attempts remaining: {wheelUnlocked ? 0 : remainingAttempts} / {maxAttempts}
-            </p>
-
-            {guessMessage ? (
-              <p className={`portal-clue-status ${wheelUnlocked ? "success" : ""}`}>
-                {guessMessage}
-              </p>
-            ) : null}
-
-            {wheelUnlocked && !wheelUsed ? (
-              <button
-                className="portal-primary-btn portal-spin-btn"
-                onClick={handleSpin}
-                disabled={spinning}
-              >
-                {spinning ? "Spinning..." : "Claim Prize"}
-              </button>
-            ) : null}
-
-            {prizeResult ? (
-              <div className="portal-prize-card">
-                <p className="portal-card-kicker">You Won</p>
-                <h3>{prizeResult}</h3>
-              </div>
-            ) : null}
-          </article>
-        </section>
-
-        <section className="portal-grid">
-          <article className="portal-card portal-home-card">
-            <div className="portal-card-head">
-              <p className="portal-card-kicker">Need to Know</p>
-              <h3>{announcementTitle || "Updates"}</h3>
-            </div>
-
-            <div className="portal-card-body">
-              <p className="portal-card-message">
-                {announcementBody || "No updates have been posted yet."}
-              </p>
-            </div>
-          </article>
-
-          <article className="portal-card portal-home-card">
-            <div className="portal-card-head">
-              <p className="portal-card-kicker">Top Performers</p>
-              <h3>Top 5 Agents of the Month</h3>
-            </div>
-
-            <div className="portal-top10-list">
-              {monthTop10.length === 0 ? (
-                <div className="portal-empty-state">No monthly sales posted yet.</div>
-              ) : (
-                monthTop10.map((row, index) => (
-                  <div className="portal-top10-item" key={`${row.agent_name}-${index}`}>
-                    <div className="portal-top10-left">
-                      <span className="portal-top10-rank">#{index + 1}</span>
-                      <span className="portal-top10-name">{row.agent_name}</span>
-                    </div>
-                    <span className="portal-top10-score">{row.month_sales}</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </article>
-
-          <article className="portal-card portal-home-card">
-            <div className="portal-card-head">
-              <p className="portal-card-kicker">Weekly Focus</p>
-              <h3>Stay Locked In</h3>
-            </div>
-
-            <div className="portal-card-body">
-              <p className="portal-card-message">
-                Keep the momentum high. Focus on consistency, follow up, and controlling
-                your pipeline this week.
-              </p>
-
-              <button
-                className="portal-secondary-btn"
-                onClick={() => navigate("/portal/weekly-focus")}
-              >
-                View Full Focus
-              </button>
-            </div>
-          </article>
-        </section>
-
-        <section className="portal-winners">
-          <article className="portal-winner-card">
-            <p className="portal-card-kicker">Today’s Winner</p>
-            <h3>{todayWinnerName || "No winner yet"}</h3>
-            <span>{todayWinnerPrize || "Prize will appear here once someone wins."}</span>
-          </article>
-
-          <article className="portal-winner-card">
-            <p className="portal-card-kicker">First Correct Guess</p>
-            <h3>{firstCorrectName || "No one yet"}</h3>
-            <span>{correctAnswer || "The answer will show after the first correct guess."}</span>
+            {guessMessage && <p>{guessMessage}</p>}
           </article>
         </section>
       </main>

@@ -7,6 +7,12 @@ function getToday() {
   return new Date().toISOString().split("T")[0];
 }
 
+function getMonthKey(dateString) {
+  if (!dateString) return "";
+  const [year, month] = dateString.split("-");
+  return `${year}-${month}`;
+}
+
 export default function AdminCluePage() {
   const navigate = useNavigate();
 
@@ -22,6 +28,7 @@ export default function AdminCluePage() {
   const [correctAnswer, setCorrectAnswer] = useState("");
   const [maxAttempts, setMaxAttempts] = useState(3);
   const [isActive, setIsActive] = useState(true);
+  const [caseSensitive, setCaseSensitive] = useState(false);
 
   useEffect(() => {
     loadClue();
@@ -57,9 +64,12 @@ export default function AdminCluePage() {
       setClueDate(data.clue_date || getToday());
       setClueTitle(data.clue_title || "");
       setClueText(data.clue_text || "");
-      setCorrectAnswer(data.correct_answer || "");
+      setCorrectAnswer(data.answer_text || "");
       setMaxAttempts(data.max_attempts || 3);
-      setIsActive(Boolean(data.is_active));
+      setIsActive(
+        typeof data.is_active === "boolean" ? data.is_active : true
+      );
+      setCaseSensitive(Boolean(data.case_sensitive));
     } else {
       setClueId(null);
       setClueDate(getToday());
@@ -68,6 +78,7 @@ export default function AdminCluePage() {
       setCorrectAnswer("");
       setMaxAttempts(3);
       setIsActive(true);
+      setCaseSensitive(false);
     }
 
     setLoading(false);
@@ -79,40 +90,57 @@ export default function AdminCluePage() {
     setStatusMessage("");
 
     try {
+      const trimmedTitle = clueTitle.trim();
+      const trimmedClueText = clueText.trim();
+      const trimmedAnswer = correctAnswer.trim();
+
+      if (!clueDate) {
+        throw new Error("Please select a clue date.");
+      }
+
+      if (!trimmedClueText) {
+        throw new Error("Please enter clue text.");
+      }
+
+      if (!trimmedAnswer) {
+        throw new Error("Please enter the correct answer.");
+      }
+
       const payload = {
         clue_date: clueDate,
-        clue_title: clueTitle.trim(),
-        clue_text: clueText.trim(),
-        correct_answer: correctAnswer.trim(),
+        month_key: getMonthKey(clueDate),
+        clue_type: "daily",
+        clue_title: trimmedTitle || "Daily Clue",
+        clue_text: trimmedClueText,
+        answer_text: trimmedAnswer,
+        case_sensitive: caseSensitive,
         max_attempts: Number(maxAttempts) || 3,
         is_active: isActive,
       };
 
-      let error;
+      let result;
 
       if (clueId) {
-        const result = await supabase
+        result = await supabase
           .from("clues")
           .update(payload)
-          .eq("id", clueId);
-
-        error = result.error;
+          .eq("id", clueId)
+          .select()
+          .single();
       } else {
-        const result = await supabase
+        result = await supabase
           .from("clues")
           .insert([payload])
           .select()
           .single();
-
-        error = result.error;
-
-        if (result.data?.id) {
-          setClueId(result.data.id);
-        }
       }
 
-      if (error) {
-        throw error;
+      if (result.error) {
+        throw result.error;
+      }
+
+      if (result.data?.id) {
+        setClueId(result.data.id);
       }
 
       setStatusMessage("Daily clue saved successfully.");
@@ -177,6 +205,7 @@ export default function AdminCluePage() {
       setCorrectAnswer("");
       setMaxAttempts(3);
       setIsActive(true);
+      setCaseSensitive(false);
     } catch (error) {
       setStatusMessage(`Delete failed: ${error.message}`);
     } finally {
@@ -267,6 +296,15 @@ export default function AdminCluePage() {
             <label className="admin-clue-checkbox">
               <input
                 type="checkbox"
+                checked={caseSensitive}
+                onChange={(e) => setCaseSensitive(e.target.checked)}
+              />
+              Case Sensitive Answer Matching
+            </label>
+
+            <label className="admin-clue-checkbox">
+              <input
+                type="checkbox"
                 checked={isActive}
                 onChange={(e) => setIsActive(e.target.checked)}
               />
@@ -306,6 +344,9 @@ export default function AdminCluePage() {
           <div className="admin-clue-preview-meta">
             <span className="admin-clue-pill">Date: {clueDate}</span>
             <span className="admin-clue-pill">Attempts: {maxAttempts}</span>
+            <span className="admin-clue-pill">
+              {caseSensitive ? "Case Sensitive" : "Case Insensitive"}
+            </span>
             <span className="admin-clue-pill">
               {isActive ? "Active" : "Inactive"}
             </span>
