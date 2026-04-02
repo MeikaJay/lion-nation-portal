@@ -7,6 +7,10 @@ function getToday() {
   return new Date().toISOString().split("T")[0];
 }
 
+function formatConversion(value) {
+  return `${Number(value || 0).toFixed(2)}%`;
+}
+
 export default function PortalHome() {
   const navigate = useNavigate();
 
@@ -41,13 +45,19 @@ export default function PortalHome() {
   const [firstCorrectName, setFirstCorrectName] = useState("");
   const [correctAnswer, setCorrectAnswer] = useState("");
 
-  const monthTop10 = useMemo(() => {
+  const monthTop5 = useMemo(() => {
     return [...salesRows]
-      .sort(
-        (a, b) =>
-          b.month_sales - a.month_sales || a.agent_name.localeCompare(b.agent_name)
-      )
       .filter((row) => row.month_sales > 0)
+      .sort((a, b) => {
+        const salesDiff = (b.month_sales || 0) - (a.month_sales || 0);
+        if (salesDiff !== 0) return salesDiff;
+
+        const conversionDiff =
+          (b.month_conversion || 0) - (a.month_conversion || 0);
+        if (conversionDiff !== 0) return conversionDiff;
+
+        return a.agent_name.localeCompare(b.agent_name);
+      })
       .slice(0, 5);
   }, [salesRows]);
 
@@ -171,7 +181,7 @@ export default function PortalHome() {
         setTodayWinnerName(todayData.latest_winner_name || "");
         setTodayWinnerPrize(todayData.latest_winner_prize || "");
         setFirstCorrectName(todayData.first_correct_name || "");
-        setCorrectAnswer(todayData.correct_answer || "");
+        setCorrectAnswer(todayData.correct_answer || todayData.answer_text || "");
       }
 
       setLoading(false);
@@ -187,7 +197,7 @@ export default function PortalHome() {
       setTodayWinnerName(data.latest_winner_name || "");
       setTodayWinnerPrize(data.latest_winner_prize || "");
       setFirstCorrectName(data.first_correct_name || "");
-      setCorrectAnswer(data.correct_answer || "");
+      setCorrectAnswer(data.correct_answer || data.answer_text || "");
     }
   };
 
@@ -457,14 +467,19 @@ export default function PortalHome() {
             </div>
 
             <div className="portal-top10-list">
-              {monthTop10.length === 0 ? (
+              {monthTop5.length === 0 ? (
                 <div className="portal-empty-state">No monthly sales posted yet.</div>
               ) : (
-                monthTop10.map((row, index) => (
+                monthTop5.map((row, index) => (
                   <div className="portal-top10-item" key={`${row.agent_name}-${index}`}>
                     <div className="portal-top10-left">
                       <span className="portal-top10-rank">#{index + 1}</span>
-                      <span className="portal-top10-name">{row.agent_name}</span>
+                      <div className="portal-top10-name-wrap">
+                        <span className="portal-top10-name">{row.agent_name}</span>
+                        <span className="portal-top10-conversion">
+                          Conversion: {formatConversion(row.month_conversion)}
+                        </span>
+                      </div>
                     </div>
                     <span className="portal-top10-score">{row.month_sales}</span>
                   </div>

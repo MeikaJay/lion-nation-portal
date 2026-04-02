@@ -172,7 +172,7 @@ function SalesTip() {
             <>
               <div className="sales-tip-badge-row">
                 <span className="sales-tip-badge">
-                  {salesTip.tip_label || "Today’s Tip"}
+                  {salesTip.tip_label || "This Week's Tip"}
                 </span>
               </div>
 
