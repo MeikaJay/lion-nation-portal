@@ -26,6 +26,11 @@ function formatConversion(value) {
   return `${Number(value || 0).toFixed(2)}%`;
 }
 
+function getMonthValue(dateString) {
+  if (!dateString) return "";
+  return dateString.slice(0, 7);
+}
+
 export default function AdminSalesLeaderboard() {
   const navigate = useNavigate();
 
@@ -39,6 +44,10 @@ export default function AdminSalesLeaderboard() {
 
   const [entries, setEntries] = useState([]);
   const [leaderboardRows, setLeaderboardRows] = useState([]);
+
+  const [filterMonth, setFilterMonth] = useState("");
+  const [filterDate, setFilterDate] = useState("");
+  const [filterAgentName, setFilterAgentName] = useState("");
 
   useEffect(() => {
     loadPage();
@@ -67,6 +76,24 @@ export default function AdminSalesLeaderboard() {
       "quarter_conversion"
     ).slice(0, 10);
   }, [leaderboardRows]);
+
+  const filteredEntries = useMemo(() => {
+    return entries.filter((entry) => {
+      const matchesMonth = filterMonth
+        ? getMonthValue(entry.sales_date) === filterMonth
+        : true;
+
+      const matchesDate = filterDate ? entry.sales_date === filterDate : true;
+
+      const matchesAgent = filterAgentName.trim()
+        ? entry.agent_name
+            .toLowerCase()
+            .includes(filterAgentName.trim().toLowerCase())
+        : true;
+
+      return matchesMonth && matchesDate && matchesAgent;
+    });
+  }, [entries, filterMonth, filterDate, filterAgentName]);
 
   async function loadPage() {
     setLoading(true);
@@ -137,6 +164,12 @@ export default function AdminSalesLeaderboard() {
     setForm(emptyForm);
     setEditingId(null);
     setMessage("");
+  }
+
+  function clearFilters() {
+    setFilterMonth("");
+    setFilterDate("");
+    setFilterAgentName("");
   }
 
   async function handleSave(e) {
@@ -432,11 +465,53 @@ export default function AdminSalesLeaderboard() {
             </div>
           </div>
 
-          {entries.length === 0 ? (
-            <div className="admin-sales-empty">No sales entries yet.</div>
+          <div className="admin-sales-filters">
+            <label>
+              Filter by Month
+              <input
+                type="month"
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(e.target.value)}
+              />
+            </label>
+
+            <label>
+              Filter by Date
+              <input
+                type="date"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+              />
+            </label>
+
+            <label>
+              Filter by Agent Name
+              <input
+                type="text"
+                value={filterAgentName}
+                onChange={(e) => setFilterAgentName(e.target.value)}
+                placeholder="Search agent name"
+              />
+            </label>
+
+            <button
+              type="button"
+              className="admin-sales-secondary-btn"
+              onClick={clearFilters}
+            >
+              Clear Filters
+            </button>
+          </div>
+
+          <p className="admin-sales-filter-count">
+            Showing {filteredEntries.length} of {entries.length} entries
+          </p>
+
+          {filteredEntries.length === 0 ? (
+            <div className="admin-sales-empty">No sales entries match your filters.</div>
           ) : (
             <div className="admin-sales-entry-list">
-              {entries.map((entry) => (
+              {filteredEntries.map((entry) => (
                 <div className="admin-sales-entry-item" key={entry.id}>
                   <div>
                     <h4>{entry.agent_name}</h4>
