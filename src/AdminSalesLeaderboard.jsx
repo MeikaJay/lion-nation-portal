@@ -31,6 +31,16 @@ function getMonthValue(dateString) {
   return dateString.slice(0, 7);
 }
 
+function formatMonthLabel(monthValue) {
+  if (!monthValue) return "Selected Results";
+  const [year, month] = monthValue.split("-");
+  const date = new Date(Number(year), Number(month) - 1, 1);
+  return date.toLocaleString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
 export default function AdminSalesLeaderboard() {
   const navigate = useNavigate();
 
@@ -103,6 +113,28 @@ export default function AdminSalesLeaderboard() {
       return matchesMonth && matchesStartDate && matchesEndDate && matchesAgent;
     });
   }, [entries, filterMonth, filterStartDate, filterEndDate, filterAgentName]);
+
+  const filteredSummary = useMemo(() => {
+    const totalSales = filteredEntries.reduce(
+      (sum, entry) => sum + Number(entry.sales_count || 0),
+      0
+    );
+
+    const totalConversion = filteredEntries.reduce(
+      (sum, entry) => sum + Number(entry.conversion_rate || 0),
+      0
+    );
+
+    const averageConversion =
+      filteredEntries.length > 0 ? totalConversion / filteredEntries.length : 0;
+
+    return {
+      totalSales,
+      averageConversion,
+      totalEntries: filteredEntries.length,
+      monthLabel: formatMonthLabel(filterMonth),
+    };
+  }, [filteredEntries, filterMonth]);
 
   async function loadPage() {
     setLoading(true);
@@ -520,6 +552,30 @@ export default function AdminSalesLeaderboard() {
             >
               Clear Filters
             </button>
+          </div>
+
+          <div className="admin-sales-summary-grid">
+            <div className="admin-sales-summary-card">
+              <p className="admin-sales-summary-label">
+                {filterMonth ? "Selected Month" : "Current Filter View"}
+              </p>
+              <h4>{filteredSummary.monthLabel}</h4>
+            </div>
+
+            <div className="admin-sales-summary-card">
+              <p className="admin-sales-summary-label">Total Sales</p>
+              <h4>{filteredSummary.totalSales}</h4>
+            </div>
+
+            <div className="admin-sales-summary-card">
+              <p className="admin-sales-summary-label">Average Conversion</p>
+              <h4>{formatConversion(filteredSummary.averageConversion)}</h4>
+            </div>
+
+            <div className="admin-sales-summary-card">
+              <p className="admin-sales-summary-label">Entries</p>
+              <h4>{filteredSummary.totalEntries}</h4>
+            </div>
           </div>
 
           <p className="admin-sales-filter-count">
