@@ -46,7 +46,8 @@ export default function AdminSalesLeaderboard() {
   const [leaderboardRows, setLeaderboardRows] = useState([]);
 
   const [filterMonth, setFilterMonth] = useState("");
-  const [filterDate, setFilterDate] = useState("");
+  const [filterStartDate, setFilterStartDate] = useState("");
+  const [filterEndDate, setFilterEndDate] = useState("");
   const [filterAgentName, setFilterAgentName] = useState("");
 
   useEffect(() => {
@@ -79,11 +80,19 @@ export default function AdminSalesLeaderboard() {
 
   const filteredEntries = useMemo(() => {
     return entries.filter((entry) => {
+      const entryDate = entry.sales_date || "";
+
       const matchesMonth = filterMonth
-        ? getMonthValue(entry.sales_date) === filterMonth
+        ? getMonthValue(entryDate) === filterMonth
         : true;
 
-      const matchesDate = filterDate ? entry.sales_date === filterDate : true;
+      const matchesStartDate = filterStartDate
+        ? entryDate >= filterStartDate
+        : true;
+
+      const matchesEndDate = filterEndDate
+        ? entryDate <= filterEndDate
+        : true;
 
       const matchesAgent = filterAgentName.trim()
         ? entry.agent_name
@@ -91,9 +100,9 @@ export default function AdminSalesLeaderboard() {
             .includes(filterAgentName.trim().toLowerCase())
         : true;
 
-      return matchesMonth && matchesDate && matchesAgent;
+      return matchesMonth && matchesStartDate && matchesEndDate && matchesAgent;
     });
-  }, [entries, filterMonth, filterDate, filterAgentName]);
+  }, [entries, filterMonth, filterStartDate, filterEndDate, filterAgentName]);
 
   async function loadPage() {
     setLoading(true);
@@ -168,7 +177,8 @@ export default function AdminSalesLeaderboard() {
 
   function clearFilters() {
     setFilterMonth("");
-    setFilterDate("");
+    setFilterStartDate("");
+    setFilterEndDate("");
     setFilterAgentName("");
   }
 
@@ -476,11 +486,20 @@ export default function AdminSalesLeaderboard() {
             </label>
 
             <label>
-              Filter by Date
+              Start Date
               <input
                 type="date"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
+                value={filterStartDate}
+                onChange={(e) => setFilterStartDate(e.target.value)}
+              />
+            </label>
+
+            <label>
+              End Date
+              <input
+                type="date"
+                value={filterEndDate}
+                onChange={(e) => setFilterEndDate(e.target.value)}
               />
             </label>
 
