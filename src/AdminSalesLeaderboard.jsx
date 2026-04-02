@@ -7,7 +7,24 @@ const emptyForm = {
   sales_date: new Date().toISOString().split("T")[0],
   agent_name: "",
   sales_count: "",
+  conversion_rate: "",
 };
+
+function sortBySalesThenConversion(rows, salesKey, conversionKey) {
+  return [...rows].sort((a, b) => {
+    const salesDiff = (b[salesKey] || 0) - (a[salesKey] || 0);
+    if (salesDiff !== 0) return salesDiff;
+
+    const conversionDiff = (b[conversionKey] || 0) - (a[conversionKey] || 0);
+    if (conversionDiff !== 0) return conversionDiff;
+
+    return a.agent_name.localeCompare(b.agent_name);
+  });
+}
+
+function formatConversion(value) {
+  return `${Number(value || 0).toFixed(2)}%`;
+}
 
 export default function AdminSalesLeaderboard() {
   const navigate = useNavigate();
@@ -28,24 +45,27 @@ export default function AdminSalesLeaderboard() {
   }, []);
 
   const previousDayTop10 = useMemo(() => {
-    return [...leaderboardRows]
-      .sort((a, b) => b.previous_day_sales - a.previous_day_sales || a.agent_name.localeCompare(b.agent_name))
-      .filter((row) => row.previous_day_sales > 0)
-      .slice(0, 10);
+    return sortBySalesThenConversion(
+      leaderboardRows.filter((row) => row.previous_day_sales > 0),
+      "previous_day_sales",
+      "previous_day_conversion"
+    ).slice(0, 10);
   }, [leaderboardRows]);
 
   const monthTop10 = useMemo(() => {
-    return [...leaderboardRows]
-      .sort((a, b) => b.month_sales - a.month_sales || a.agent_name.localeCompare(b.agent_name))
-      .filter((row) => row.month_sales > 0)
-      .slice(0, 10);
+    return sortBySalesThenConversion(
+      leaderboardRows.filter((row) => row.month_sales > 0),
+      "month_sales",
+      "month_conversion"
+    ).slice(0, 10);
   }, [leaderboardRows]);
 
   const quarterTop10 = useMemo(() => {
-    return [...leaderboardRows]
-      .sort((a, b) => b.quarter_sales - a.quarter_sales || a.agent_name.localeCompare(b.agent_name))
-      .filter((row) => row.quarter_sales > 0)
-      .slice(0, 10);
+    return sortBySalesThenConversion(
+      leaderboardRows.filter((row) => row.quarter_sales > 0),
+      "quarter_sales",
+      "quarter_conversion"
+    ).slice(0, 10);
   }, [leaderboardRows]);
 
   async function loadPage() {
@@ -125,6 +145,7 @@ export default function AdminSalesLeaderboard() {
     setMessage("");
 
     const salesCount = Number(form.sales_count);
+    const conversionRate = Number(form.conversion_rate);
 
     if (!form.sales_date) {
       setMessage("Sales date is required.");
@@ -144,10 +165,17 @@ export default function AdminSalesLeaderboard() {
       return;
     }
 
+    if (Number.isNaN(conversionRate) || conversionRate < 0) {
+      setMessage("Conversion must be 0 or greater.");
+      setSaving(false);
+      return;
+    }
+
     const payload = {
       sales_date: form.sales_date,
       agent_name: form.agent_name.trim(),
       sales_count: salesCount,
+      conversion_rate: conversionRate,
     };
 
     let error;
@@ -185,6 +213,7 @@ export default function AdminSalesLeaderboard() {
       sales_date: entry.sales_date,
       agent_name: entry.agent_name,
       sales_count: entry.sales_count,
+      conversion_rate: entry.conversion_rate ?? "",
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -216,7 +245,7 @@ export default function AdminSalesLeaderboard() {
     navigate("/");
   }
 
-  function renderTop10Card(title, rows, salesKey) {
+  function renderTop10Card(title, rows, salesKey, conversionKey) {
     return (
       <div className="admin-sales-board-card">
         <div className="admin-sales-board-head">
@@ -232,9 +261,17 @@ export default function AdminSalesLeaderboard() {
               <div className="admin-sales-rank-item" key={`${title}-${row.agent_name}`}>
                 <div className="admin-sales-rank-left">
                   <span className="admin-sales-rank-number">#{index + 1}</span>
-                  <span className="admin-sales-rank-name">{row.agent_name}</span>
+                  <div className="admin-sales-rank-name-wrap">
+                    <span className="admin-sales-rank-name">{row.agent_name}</span>
+                    <span className="admin-sales-rank-conversion">
+                      Conversion: {formatConversion(row[conversionKey])}
+                    </span>
+                  </div>
                 </div>
-                <span className="admin-sales-rank-score">{row[salesKey]}</span>
+
+                <div className="admin-sales-rank-right">
+                  <span className="admin-sales-rank-score">{row[salesKey]}</span>
+                </div>
               </div>
             ))}
           </div>
@@ -279,10 +316,11 @@ export default function AdminSalesLeaderboard() {
 
       <main className="admin-sales-main">
         <section className="admin-sales-hero">
-          <p className="admin-sales-tag">Sales Only</p>
-          <h2>Post daily sales and let the system rank the site</h2>
+          <p className="admin-sales-tag">Sales and Conversion</p>
+          <h2>Post daily sales and use conversion as the tie breaker</h2>
           <p>
-            This board calculates Top 10 for previous day, current month, and current quarter.
+            Rankings are sorted by sales first. If agents are tied in sales, the higher
+            conversion rate takes the lead.
           </p>
         </section>
 
@@ -329,6 +367,19 @@ export default function AdminSalesLeaderboard() {
                 />
               </label>
 
+              <label>
+                Conversion Rate
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  name="conversion_rate"
+                  value={form.conversion_rate}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                />
+              </label>
+
               <div className="admin-sales-form-actions">
                 <button
                   type="submit"
@@ -352,9 +403,24 @@ export default function AdminSalesLeaderboard() {
           </div>
 
           <div className="admin-sales-boards-grid">
-            {renderTop10Card("Previous Day", previousDayTop10, "previous_day_sales")}
-            {renderTop10Card("Current Month", monthTop10, "month_sales")}
-            {renderTop10Card("Current Quarter", quarterTop10, "quarter_sales")}
+            {renderTop10Card(
+              "Previous Day",
+              previousDayTop10,
+              "previous_day_sales",
+              "previous_day_conversion"
+            )}
+            {renderTop10Card(
+              "Current Month",
+              monthTop10,
+              "month_sales",
+              "month_conversion"
+            )}
+            {renderTop10Card(
+              "Current Quarter",
+              quarterTop10,
+              "quarter_sales",
+              "quarter_conversion"
+            )}
           </div>
         </section>
 
@@ -375,6 +441,7 @@ export default function AdminSalesLeaderboard() {
                   <div>
                     <h4>{entry.agent_name}</h4>
                     <p>{entry.sales_date}</p>
+                    <p>Conversion: {formatConversion(entry.conversion_rate)}</p>
                   </div>
 
                   <div className="admin-sales-entry-right">
