@@ -60,6 +60,8 @@ export default function AdminSalesLeaderboard() {
   const [filterEndDate, setFilterEndDate] = useState("");
   const [filterAgentName, setFilterAgentName] = useState("");
 
+  const [expandedAgents, setExpandedAgents] = useState({});
+
   useEffect(() => {
     loadPage();
   }, []);
@@ -114,6 +116,57 @@ export default function AdminSalesLeaderboard() {
     });
   }, [entries, filterMonth, filterStartDate, filterEndDate, filterAgentName]);
 
+  const groupedAgentEntries = useMemo(() => {
+    const grouped = filteredEntries.reduce((acc, entry) => {
+      const key = entry.agent_name?.trim() || "Unknown Agent";
+
+      if (!acc[key]) {
+        acc[key] = {
+          agent_name: key,
+          total_sales: 0,
+          total_conversion: 0,
+          entry_count: 0,
+          latest_date: entry.sales_date || "",
+          rows: [],
+        };
+      }
+
+      acc[key].total_sales += Number(entry.sales_count || 0);
+      acc[key].total_conversion += Number(entry.conversion_rate || 0);
+      acc[key].entry_count += 1;
+      acc[key].rows.push(entry);
+
+      if ((entry.sales_date || "") > (acc[key].latest_date || "")) {
+        acc[key].latest_date = entry.sales_date;
+      }
+
+      return acc;
+    }, {});
+
+    return Object.values(grouped)
+      .map((agent) => ({
+        ...agent,
+        average_conversion:
+          agent.entry_count > 0
+            ? agent.total_conversion / agent.entry_count
+            : 0,
+        rows: [...agent.rows].sort((a, b) => {
+          const dateDiff = (b.sales_date || "").localeCompare(a.sales_date || "");
+          if (dateDiff !== 0) return dateDiff;
+          return (b.sales_count || 0) - (a.sales_count || 0);
+        }),
+      }))
+      .sort((a, b) => {
+        const salesDiff = b.total_sales - a.total_sales;
+        if (salesDiff !== 0) return salesDiff;
+
+        const conversionDiff = b.average_conversion - a.average_conversion;
+        if (conversionDiff !== 0) return conversionDiff;
+
+        return a.agent_name.localeCompare(b.agent_name);
+      });
+  }, [filteredEntries]);
+
   const filteredSummary = useMemo(() => {
     const totalSales = filteredEntries.reduce(
       (sum, entry) => sum + Number(entry.sales_count || 0),
@@ -132,9 +185,10 @@ export default function AdminSalesLeaderboard() {
       totalSales,
       averageConversion,
       totalEntries: filteredEntries.length,
+      totalAgents: groupedAgentEntries.length,
       monthLabel: formatMonthLabel(filterMonth),
     };
-  }, [filteredEntries, filterMonth]);
+  }, [filteredEntries, groupedAgentEntries.length, filterMonth]);
 
   async function loadPage() {
     setLoading(true);
@@ -212,6 +266,14 @@ export default function AdminSalesLeaderboard() {
     setFilterStartDate("");
     setFilterEndDate("");
     setFilterAgentName("");
+    setExpandedAgents({});
+  }
+
+  function toggleAgentExpansion(agentName) {
+    setExpandedAgents((prev) => ({
+      ...prev,
+      [agentName]: !prev[agentName],
+    }));
   }
 
   async function handleSave(e) {
@@ -503,7 +565,7 @@ export default function AdminSalesLeaderboard() {
           <div className="admin-sales-card-head">
             <div>
               <p className="admin-sales-card-kicker">History</p>
-              <h3>Sales Entries</h3>
+              <h3>Agent Totals</h3>
             </div>
           </div>
 
@@ -573,46 +635,75 @@ export default function AdminSalesLeaderboard() {
             </div>
 
             <div className="admin-sales-summary-card">
-              <p className="admin-sales-summary-label">Entries</p>
-              <h4>{filteredSummary.totalEntries}</h4>
+              <p className="admin-sales-summary-label">Agents</p>
+              <h4>{filteredSummary.totalAgents}</h4>
             </div>
           </div>
 
           <p className="admin-sales-filter-count">
-            Showing {filteredEntries.length} of {entries.length} entries
+            Showing {groupedAgentEntries.length} agent totals from {filteredEntries.length} daily entries
           </p>
 
-          {filteredEntries.length === 0 ? (
+          {groupedAgentEntries.length === 0 ? (
             <div className="admin-sales-empty">No sales entries match your filters.</div>
           ) : (
             <div className="admin-sales-entry-list">
-              {filteredEntries.map((entry) => (
-                <div className="admin-sales-entry-item" key={entry.id}>
-                  <div>
-                    <h4>{entry.agent_name}</h4>
-                    <p>{entry.sales_date}</p>
-                    <p>Conversion: {formatConversion(entry.conversion_rate)}</p>
-                  </div>
+              {groupedAgentEntries.map((agent) => {
+                const isExpanded = Boolean(expandedAgents[agent.agent_name]);
 
-                  <div className="admin-sales-entry-right">
-                    <strong>{entry.sales_count}</strong>
-                    <div className="admin-sales-entry-actions">
-                      <button
-                        className="admin-sales-small-btn"
-                        onClick={() => handleEdit(entry)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="admin-sales-small-btn danger"
-                        onClick={() => handleDelete(entry.id)}
-                      >
-                        Delete
-                      </button>
+                return (
+                  <div className="admin-sales-entry-item" key={agent.agent_name}>
+                    <div>
+                      <h4>{agent.agent_name}</h4>
+                      <p>Total Sales: {agent.total_sales}</p>
+                      <p>Average Conversion: {formatConversion(agent.average_conversion)}</p>
+                      <p>Entries Included: {agent.entry_count}</p>
+                      <p>Latest Entry: {agent.latest_date || "N/A"}</p>
                     </div>
+
+                    <div className="admin-sales-entry-right">
+                      <strong>{agent.total_sales}</strong>
+                      <div className="admin-sales-entry-actions">
+                        <button
+                          className="admin-sales-small-btn"
+                          onClick={() => toggleAgentExpansion(agent.agent_name)}
+                        >
+                          {isExpanded ? "Hide Entries" : "Show Entries"}
+                        </button>
+                      </div>
+                    </div>
+
+                    {isExpanded ? (
+                      <div className="admin-sales-agent-detail-list">
+                        {agent.rows.map((entry) => (
+                          <div className="admin-sales-agent-detail-item" key={entry.id}>
+                            <div>
+                              <h5>{entry.sales_date}</h5>
+                              <p>Sales: {entry.sales_count}</p>
+                              <p>Conversion: {formatConversion(entry.conversion_rate)}</p>
+                            </div>
+
+                            <div className="admin-sales-entry-actions">
+                              <button
+                                className="admin-sales-small-btn"
+                                onClick={() => handleEdit(entry)}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className="admin-sales-small-btn danger"
+                                onClick={() => handleDelete(entry.id)}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>
