@@ -504,7 +504,8 @@ export default function PortalHome() {
                 Why?
                 It's simple...
                 Lower cost when visiting doctors... and this...
-                This matters!!! This is why most people NEED health insurance plans.
+                This matters!!! High copays and coinsurances are the reasons why most people NEED health insurance plans.
+                Do not sell yourself or your client's short by missing a medsup opportunity. 
               </p>
 
               <button
