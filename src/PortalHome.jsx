@@ -498,12 +498,12 @@ export default function PortalHome() {
 
             <div className="portal-card-body">
               <p className="portal-card-message">
-                Medigaps are an easy win this tiime of year. No hunting for SEPs. 
-                Most clients who enroll in Medigap, tend to remain in them.  
+                Medigaps are an easy win this time of year. No hunting for SEPs. 
+                Most clients who enroll in Medigap plans, tend to remain in them.  
                 Why?
                 It's simple...
                 Lower cost when visiting doctors... and this...
-                This matters!! 
+                This matters!!! This is why most people NEED health insurance plans.
               </p>
 
               <button
