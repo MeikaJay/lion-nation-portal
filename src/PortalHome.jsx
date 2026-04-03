@@ -493,13 +493,17 @@ export default function PortalHome() {
           <article className="portal-card portal-home-card">
             <div className="portal-card-head">
               <p className="portal-card-kicker">Weekly Focus</p>
-              <h3>Stay Locked In</h3>
+              <h3>MedSups, Medigaps</h3>
             </div>
 
             <div className="portal-card-body">
               <p className="portal-card-message">
-                Keep the momentum high. Focus on consistency, follow up, and controlling
-                your pipeline this week.
+                Medigaps are an easy win this tiime of year. No hunting for SEPs. 
+                Most clients who enroll in Medigap, tend to remain in them.  
+                Why?
+                It's simple...
+                Lower cost when visiting doctors... and this...
+                This matters!! 
               </p>
 
               <button
