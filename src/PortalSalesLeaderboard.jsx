@@ -3,6 +3,24 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabase";
 import "./PortalSalesLeaderboard.css";
 
+function sortBySalesThenConversion(rows, salesKey, conversionKey) {
+  return [...rows].sort((a, b) => {
+    const salesDiff = (b[salesKey] || 0) - (a[salesKey] || 0);
+    if (salesDiff !== 0) return salesDiff;
+
+    const conversionDiff = (b[conversionKey] || 0) - (a[conversionKey] || 0);
+    if (conversionDiff !== 0) return conversionDiff;
+
+    return a.agent_name.localeCompare(b.agent_name);
+  });
+}
+
+function formatSalesAndConversion(sales, conversion) {
+  const safeSales = Number(sales || 0);
+  const safeConversion = Number(conversion || 0);
+  return `${safeSales}MMs ${safeConversion.toFixed(0)}% Conv.`;
+}
+
 export default function PortalSalesLeaderboard() {
   const navigate = useNavigate();
 
@@ -16,24 +34,27 @@ export default function PortalSalesLeaderboard() {
   }, []);
 
   const previousDayTop5 = useMemo(() => {
-    return [...rows]
-      .sort((a, b) => b.previous_day_sales - a.previous_day_sales || a.agent_name.localeCompare(b.agent_name))
-      .filter((row) => row.previous_day_sales > 0)
-      .slice(0, 5);
+    return sortBySalesThenConversion(
+      rows.filter((row) => row.previous_day_sales > 0),
+      "previous_day_sales",
+      "previous_day_conversion"
+    ).slice(0, 5);
   }, [rows]);
 
   const monthTop5 = useMemo(() => {
-    return [...rows]
-      .sort((a, b) => b.month_sales - a.month_sales || a.agent_name.localeCompare(b.agent_name))
-      .filter((row) => row.month_sales > 0)
-      .slice(0, 5);
+    return sortBySalesThenConversion(
+      rows.filter((row) => row.month_sales > 0),
+      "month_sales",
+      "month_conversion"
+    ).slice(0, 5);
   }, [rows]);
 
   const quarterTop5 = useMemo(() => {
-    return [...rows]
-      .sort((a, b) => b.quarter_sales - a.quarter_sales || a.agent_name.localeCompare(b.agent_name))
-      .filter((row) => row.quarter_sales > 0)
-      .slice(0, 5);
+    return sortBySalesThenConversion(
+      rows.filter((row) => row.quarter_sales > 0),
+      "quarter_sales",
+      "quarter_conversion"
+    ).slice(0, 5);
   }, [rows]);
 
   async function loadPage() {
@@ -82,7 +103,7 @@ export default function PortalSalesLeaderboard() {
     navigate("/");
   }
 
-  function renderTop5Card(title, rows, salesKey) {
+  function renderTop5Card(title, rows, salesKey, conversionKey) {
     return (
       <div className="portal-sales-board-card">
         <div className="portal-sales-board-head">
@@ -100,7 +121,9 @@ export default function PortalSalesLeaderboard() {
                   <span className="portal-sales-rank-number">#{index + 1}</span>
                   <span className="portal-sales-rank-name">{row.agent_name}</span>
                 </div>
-                <span className="portal-sales-rank-score">{row[salesKey]}</span>
+                <span className="portal-sales-rank-score">
+                  {formatSalesAndConversion(row[salesKey], row[conversionKey])}
+                </span>
               </div>
             ))}
           </div>
@@ -145,19 +168,35 @@ export default function PortalSalesLeaderboard() {
 
       <main className="portal-sales-main">
         <section className="portal-sales-hero">
-          <p className="portal-sales-tag">Sales Only</p>
+          <p className="portal-sales-tag">Sales and Conversion</p>
           <h2>Site Sales Rankings</h2>
           <p>
             This board shows the Top 5 for previous day, current month, and current quarter.
+            Sales lead first, and conversion breaks ties.
           </p>
         </section>
 
         {message ? <p className="portal-sales-message">{message}</p> : null}
 
         <section className="portal-sales-boards-grid">
-          {renderTop5Card("Previous Day", previousDayTop5, "previous_day_sales")}
-          {renderTop5Card("Current Month", monthTop5, "month_sales")}
-          {renderTop5Card("Current Quarter", quarterTop5, "quarter_sales")}
+          {renderTop5Card(
+            "Previous Day",
+            previousDayTop5,
+            "previous_day_sales",
+            "previous_day_conversion"
+          )}
+          {renderTop5Card(
+            "Current Month",
+            monthTop5,
+            "month_sales",
+            "month_conversion"
+          )}
+          {renderTop5Card(
+            "Current Quarter",
+            quarterTop5,
+            "quarter_sales",
+            "quarter_conversion"
+          )}
         </section>
       </main>
     </div>
