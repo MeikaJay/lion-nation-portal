@@ -109,7 +109,7 @@ export default function PortalBingo() {
 
     const nextProgressMap = {};
     (progressRows || []).forEach((row) => {
-      nextProgressMap[row.square_id] = row.is_completed;
+      nextProgressMap[row.square_id] = Boolean(row.is_completed);
     });
     setProgressMap(nextProgressMap);
 
@@ -130,50 +130,36 @@ export default function PortalBingo() {
   }
 
   async function handleToggleSquare(square) {
-    if (!board || !currentUserId) return;
+    if (!board || !currentUserId || savingSquareId) return;
 
-    const isCompleted = Boolean(progressMap[square.id]);
+    const wasCompleted = Boolean(progressMap[square.id]);
+    const nextCompleted = !wasCompleted;
+
     setSavingSquareId(square.id);
     setMessage("");
 
-    if (isCompleted) {
-      const { error } = await supabase.from("portal_bingo_progress").upsert({
-        board_id: board.id,
-        square_id: square.id,
-        profile_id: currentUserId,
-        is_completed: false,
-        completed_at: null,
-      });
+    const previousProgressMap = { ...progressMap };
 
-      if (error) {
-        setMessage(`Could not update square: ${error.message}`);
-        setSavingSquareId(null);
-        return;
-      }
+    setProgressMap((prev) => ({
+      ...prev,
+      [square.id]: nextCompleted,
+    }));
 
-      setProgressMap((prev) => ({
-        ...prev,
-        [square.id]: false,
-      }));
-    } else {
-      const { error } = await supabase.from("portal_bingo_progress").upsert({
-        board_id: board.id,
-        square_id: square.id,
-        profile_id: currentUserId,
-        is_completed: true,
-        completed_at: new Date().toISOString(),
-      });
+    const payload = {
+      board_id: board.id,
+      square_id: square.id,
+      profile_id: currentUserId,
+      is_completed: nextCompleted,
+      completed_at: nextCompleted ? new Date().toISOString() : null,
+    };
 
-      if (error) {
-        setMessage(`Could not update square: ${error.message}`);
-        setSavingSquareId(null);
-        return;
-      }
+    const { error } = await supabase.from("portal_bingo_progress").upsert(payload);
 
-      setProgressMap((prev) => ({
-        ...prev,
-        [square.id]: true,
-      }));
+    if (error) {
+      setProgressMap(previousProgressMap);
+      setMessage(`Could not update square: ${error.message}`);
+      setSavingSquareId(null);
+      return;
     }
 
     setSavingSquareId(null);
@@ -279,6 +265,7 @@ export default function PortalBingo() {
               <div className="portal-bingo-board">
                 {squares.map((square) => {
                   const completed = Boolean(progressMap[square.id]);
+                  const isSaving = savingSquareId === square.id;
 
                   return (
                     <button
@@ -286,7 +273,7 @@ export default function PortalBingo() {
                       type="button"
                       className={`portal-bingo-square ${completed ? "completed" : ""}`}
                       onClick={() => handleToggleSquare(square)}
-                      disabled={savingSquareId === square.id}
+                      disabled={isSaving}
                     >
                       <span className="portal-bingo-square-number">
                         {square.square_order}
@@ -297,10 +284,10 @@ export default function PortalBingo() {
                       </span>
 
                       <span className="portal-bingo-square-status">
-                        {savingSquareId === square.id
+                        {isSaving
                           ? "Saving..."
                           : completed
-                          ? "Done"
+                          ? "Tap to unmark"
                           : "Tap to mark"}
                       </span>
                     </button>
