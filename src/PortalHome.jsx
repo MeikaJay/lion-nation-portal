@@ -493,11 +493,12 @@ export default function PortalHome() {
           <article className="portal-card portal-home-card">
             <div className="portal-card-head">
               <p className="portal-card-kicker">Weekly Focus</p>
-              <h3>MedSups, Medigaps</h3>
+              <h3>Medsup. Medigap. Medicare Supplement.</h3>
             </div>
 
             <div className="portal-card-body">
               <p className="portal-card-message">
+                Which every name you perfer to call it... these plans are essential! 
                 Medigaps are an easy win this time of year. No hunting for SEPs. 
                 Most clients who enroll in Medigap plans, tend to remain in them.  
                 Why?
