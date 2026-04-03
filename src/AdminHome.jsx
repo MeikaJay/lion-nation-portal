@@ -1,712 +1,248 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabase";
-import "./AdminSalesLeaderboard.css";
+import AdminResetPanel from "./AdminResetPanel";
+import AdminWinnerHistory from "./AdminWinnerHistory";
+import "./AdminHome.css";
 
-const emptyForm = {
-  sales_date: new Date().toISOString().split("T")[0],
-  agent_name: "",
-  sales_count: "",
-  conversion_rate: "",
-};
-
-function sortBySalesThenConversion(rows, salesKey, conversionKey) {
-  return [...rows].sort((a, b) => {
-    const salesDiff = (b[salesKey] || 0) - (a[salesKey] || 0);
-    if (salesDiff !== 0) return salesDiff;
-
-    const conversionDiff = (b[conversionKey] || 0) - (a[conversionKey] || 0);
-    if (conversionDiff !== 0) return conversionDiff;
-
-    return a.agent_name.localeCompare(b.agent_name);
-  });
-}
-
-function formatConversion(value) {
-  return `${Number(value || 0).toFixed(2)}%`;
-}
-
-function getMonthValue(dateString) {
-  if (!dateString) return "";
-  return dateString.slice(0, 7);
-}
-
-function formatMonthLabel(monthValue) {
-  if (!monthValue) return "Selected Results";
-  const [year, month] = monthValue.split("-");
-  const date = new Date(Number(year), Number(month) - 1, 1);
-  return date.toLocaleString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
-}
-
-export default function AdminSalesLeaderboard() {
+export default function AdminHome() {
   const navigate = useNavigate();
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
   const [userName, setUserName] = useState("Admin");
+  const [loading, setLoading] = useState(true);
 
-  const [form, setForm] = useState(emptyForm);
-  const [editingId, setEditingId] = useState(null);
-
-  const [entries, setEntries] = useState([]);
-  const [leaderboardRows, setLeaderboardRows] = useState([]);
-
-  const [filterMonth, setFilterMonth] = useState("");
-  const [filterStartDate, setFilterStartDate] = useState("");
-  const [filterEndDate, setFilterEndDate] = useState("");
-  const [filterAgentName, setFilterAgentName] = useState("");
-
-  const [expandedAgents, setExpandedAgents] = useState({});
+  const [todayWinnerName, setTodayWinnerName] = useState("");
+  const [todayWinnerPrize, setTodayWinnerPrize] = useState("");
+  const [firstCorrectName, setFirstCorrectName] = useState("");
+  const [correctAnswer, setCorrectAnswer] = useState("");
 
   useEffect(() => {
-    loadPage();
-  }, []);
+    const loadAdmin = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-  const previousDayTop10 = useMemo(() => {
-    return sortBySalesThenConversion(
-      leaderboardRows.filter((row) => row.previous_day_sales > 0),
-      "previous_day_sales",
-      "previous_day_conversion"
-    ).slice(0, 10);
-  }, [leaderboardRows]);
-
-  const monthTop10 = useMemo(() => {
-    return sortBySalesThenConversion(
-      leaderboardRows.filter((row) => row.month_sales > 0),
-      "month_sales",
-      "month_conversion"
-    ).slice(0, 10);
-  }, [leaderboardRows]);
-
-  const quarterTop10 = useMemo(() => {
-    return sortBySalesThenConversion(
-      leaderboardRows.filter((row) => row.quarter_sales > 0),
-      "quarter_sales",
-      "quarter_conversion"
-    ).slice(0, 10);
-  }, [leaderboardRows]);
-
-  const filteredEntries = useMemo(() => {
-    return entries.filter((entry) => {
-      const entryDate = entry.sales_date || "";
-
-      const matchesMonth = filterMonth
-        ? getMonthValue(entryDate) === filterMonth
-        : true;
-
-      const matchesStartDate = filterStartDate
-        ? entryDate >= filterStartDate
-        : true;
-
-      const matchesEndDate = filterEndDate
-        ? entryDate <= filterEndDate
-        : true;
-
-      const matchesAgent = filterAgentName.trim()
-        ? entry.agent_name
-            .toLowerCase()
-            .includes(filterAgentName.trim().toLowerCase())
-        : true;
-
-      return matchesMonth && matchesStartDate && matchesEndDate && matchesAgent;
-    });
-  }, [entries, filterMonth, filterStartDate, filterEndDate, filterAgentName]);
-
-  const groupedAgentEntries = useMemo(() => {
-    const grouped = filteredEntries.reduce((acc, entry) => {
-      const key = entry.agent_name?.trim() || "Unknown Agent";
-
-      if (!acc[key]) {
-        acc[key] = {
-          agent_name: key,
-          total_sales: 0,
-          total_conversion: 0,
-          entry_count: 0,
-          latest_date: entry.sales_date || "",
-          rows: [],
-        };
+      if (!user) {
+        navigate("/");
+        return;
       }
 
-      acc[key].total_sales += Number(entry.sales_count || 0);
-      acc[key].total_conversion += Number(entry.conversion_rate || 0);
-      acc[key].entry_count += 1;
-      acc[key].rows.push(entry);
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .maybeSingle();
 
-      if ((entry.sales_date || "") > (acc[key].latest_date || "")) {
-        acc[key].latest_date = entry.sales_date;
+      if (profile?.full_name) {
+        const firstName = profile.full_name.trim().split(" ")[0];
+        setUserName(firstName);
+      } else if (user.email) {
+        const firstPart = user.email.split("@")[0].split(".")[0];
+        setUserName(firstPart.charAt(0).toUpperCase() + firstPart.slice(1));
       }
 
-      return acc;
-    }, {});
+      const { data: todayData } = await supabase.rpc("get_today_game_status");
 
-    return Object.values(grouped)
-      .map((agent) => ({
-        ...agent,
-        average_conversion:
-          agent.entry_count > 0
-            ? agent.total_conversion / agent.entry_count
-            : 0,
-        rows: [...agent.rows].sort((a, b) => {
-          const dateDiff = (b.sales_date || "").localeCompare(a.sales_date || "");
-          if (dateDiff !== 0) return dateDiff;
-          return (b.sales_count || 0) - (a.sales_count || 0);
-        }),
-      }))
-      .sort((a, b) => {
-        const salesDiff = b.total_sales - a.total_sales;
-        if (salesDiff !== 0) return salesDiff;
+      if (todayData?.has_clue) {
+        setTodayWinnerName(todayData.latest_winner_name || "");
+        setTodayWinnerPrize(todayData.latest_winner_prize || "");
+        setFirstCorrectName(todayData.first_correct_name || "");
+        setCorrectAnswer(todayData.correct_answer || "");
+      }
 
-        const conversionDiff = b.average_conversion - a.average_conversion;
-        if (conversionDiff !== 0) return conversionDiff;
-
-        return a.agent_name.localeCompare(b.agent_name);
-      });
-  }, [filteredEntries]);
-
-  const filteredSummary = useMemo(() => {
-    const totalSales = filteredEntries.reduce(
-      (sum, entry) => sum + Number(entry.sales_count || 0),
-      0
-    );
-
-    const totalConversion = filteredEntries.reduce(
-      (sum, entry) => sum + Number(entry.conversion_rate || 0),
-      0
-    );
-
-    const averageConversion =
-      filteredEntries.length > 0 ? totalConversion / filteredEntries.length : 0;
-
-    return {
-      totalSales,
-      averageConversion,
-      totalEntries: filteredEntries.length,
-      totalAgents: groupedAgentEntries.length,
-      monthLabel: formatMonthLabel(filterMonth),
-    };
-  }, [filteredEntries, groupedAgentEntries.length, filterMonth]);
-
-  async function loadPage() {
-    setLoading(true);
-    setMessage("");
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      navigate("/");
-      return;
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name, role")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (profile?.role !== "admin") {
-      navigate("/portal");
-      return;
-    }
-
-    if (profile?.full_name) {
-      setUserName(profile.full_name.trim().split(" ")[0]);
-    }
-
-    const { data: entryRows, error: entryError } = await supabase
-      .from("portal_sales_scores")
-      .select("*")
-      .order("sales_date", { ascending: false })
-      .order("agent_name", { ascending: true });
-
-    if (entryError) {
-      setMessage(`Could not load sales entries: ${entryError.message}`);
-    } else {
-      setEntries(entryRows || []);
-    }
-
-    const { data: leaderboardData, error: leaderboardError } = await supabase
-      .from("portal_sales_leaderboard_view")
-      .select("*");
-
-    if (leaderboardError) {
-      setMessage((prev) =>
-        prev
-          ? `${prev} Could not load leaderboard: ${leaderboardError.message}`
-          : `Could not load leaderboard: ${leaderboardError.message}`
-      );
-    } else {
-      setLeaderboardRows(leaderboardData || []);
-    }
-
-    setLoading(false);
-  }
-
-  function handleChange(e) {
-    const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  }
-
-  function resetForm() {
-    setForm(emptyForm);
-    setEditingId(null);
-    setMessage("");
-  }
-
-  function clearFilters() {
-    setFilterMonth("");
-    setFilterStartDate("");
-    setFilterEndDate("");
-    setFilterAgentName("");
-    setExpandedAgents({});
-  }
-
-  function toggleAgentExpansion(agentName) {
-    setExpandedAgents((prev) => ({
-      ...prev,
-      [agentName]: !prev[agentName],
-    }));
-  }
-
-  async function handleSave(e) {
-    e.preventDefault();
-    setSaving(true);
-    setMessage("");
-
-    const salesCount = Number(form.sales_count);
-    const conversionRate = Number(form.conversion_rate);
-
-    if (!form.sales_date) {
-      setMessage("Sales date is required.");
-      setSaving(false);
-      return;
-    }
-
-    if (!form.agent_name.trim()) {
-      setMessage("Agent name is required.");
-      setSaving(false);
-      return;
-    }
-
-    if (Number.isNaN(salesCount) || salesCount < 0) {
-      setMessage("Sales count must be 0 or greater.");
-      setSaving(false);
-      return;
-    }
-
-    if (Number.isNaN(conversionRate) || conversionRate < 0) {
-      setMessage("Conversion must be 0 or greater.");
-      setSaving(false);
-      return;
-    }
-
-    const payload = {
-      sales_date: form.sales_date,
-      agent_name: form.agent_name.trim(),
-      sales_count: salesCount,
-      conversion_rate: conversionRate,
+      setLoading(false);
     };
 
-    let error;
+    loadAdmin();
+  }, [navigate]);
 
-    if (editingId) {
-      const response = await supabase
-        .from("portal_sales_scores")
-        .update(payload)
-        .eq("id", editingId);
-
-      error = response.error;
-    } else {
-      const response = await supabase
-        .from("portal_sales_scores")
-        .insert(payload);
-
-      error = response.error;
-    }
-
-    if (error) {
-      setMessage(`Could not save sales entry: ${error.message}`);
-      setSaving(false);
-      return;
-    }
-
-    setMessage(editingId ? "Sales entry updated." : "Sales entry added.");
-    resetForm();
-    await loadPage();
-    setSaving(false);
-  }
-
-  function handleEdit(entry) {
-    setEditingId(entry.id);
-    setForm({
-      sales_date: entry.sales_date,
-      agent_name: entry.agent_name,
-      sales_count: entry.sales_count,
-      conversion_rate: entry.conversion_rate ?? "",
-    });
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  async function handleDelete(id) {
-    const confirmed = window.confirm("Delete this sales entry?");
-    if (!confirmed) return;
-
-    const { error } = await supabase
-      .from("portal_sales_scores")
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      setMessage(`Could not delete entry: ${error.message}`);
-      return;
-    }
-
-    if (editingId === id) {
-      resetForm();
-    }
-
-    setMessage("Sales entry deleted.");
-    await loadPage();
-  }
-
-  async function handleLogout() {
+  const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/");
-  }
+  };
 
-  function renderTop10Card(title, rows, salesKey, conversionKey) {
-    return (
-      <div className="admin-sales-board-card">
-        <div className="admin-sales-board-head">
-          <p className="admin-sales-board-kicker">Top 10</p>
-          <h3>{title}</h3>
-        </div>
-
-        {rows.length === 0 ? (
-          <div className="admin-sales-empty">No sales posted yet.</div>
-        ) : (
-          <div className="admin-sales-rank-list">
-            {rows.map((row, index) => (
-              <div className="admin-sales-rank-item" key={`${title}-${row.agent_name}`}>
-                <div className="admin-sales-rank-left">
-                  <span className="admin-sales-rank-number">#{index + 1}</span>
-                  <div className="admin-sales-rank-name-wrap">
-                    <span className="admin-sales-rank-name">{row.agent_name}</span>
-                    <span className="admin-sales-rank-conversion">
-                      Conversion: {formatConversion(row[conversionKey])}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="admin-sales-rank-right">
-                  <span className="admin-sales-rank-score">{row[salesKey]}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
+  const goTo = (path) => navigate(path);
 
   if (loading) {
-    return <div className="admin-sales-loading">Loading sales leaderboard...</div>;
+    return <div className="admin-loading">Loading admin...</div>;
   }
 
   return (
-    <div className="admin-sales-page">
-      <header className="admin-sales-header">
-        <div className="admin-sales-brand">
-          <img src="/Lion Nation.png" alt="Lion Nation" className="admin-sales-logo" />
+    <div className="admin-page">
+      <header className="admin-header">
+        <div className="admin-brand">
+          <img
+            src="/Lion Nation.png"
+            alt="Lion Nation"
+            className="admin-logo"
+          />
           <div>
-            <p className="admin-sales-mini-title">Lion Nation Admin</p>
-            <h1>Sales Leaderboard</h1>
-            <p className="admin-sales-subtitle">
-              Welcome, {userName}. Track the Top 10 in site sales.
-            </p>
+            <p className="admin-mini-title">Lion Nation Admin</p>
+            <h1>Welcome, {userName}</h1>
           </div>
         </div>
 
-        <div className="admin-sales-header-actions">
-          <button
-            className="admin-sales-secondary-btn"
-            onClick={() => navigate("/admin")}
-          >
-            Back to Admin
-          </button>
-          <button
-            className="admin-sales-logout-btn"
-            onClick={handleLogout}
-          >
-            Log Out
-          </button>
-        </div>
+        <button className="admin-logout-btn" onClick={handleLogout}>
+          Log Out
+        </button>
       </header>
 
-      <main className="admin-sales-main">
-        <section className="admin-sales-hero">
-          <p className="admin-sales-tag">Sales and Conversion</p>
-          <h2>Post daily sales and use conversion as the tie breaker</h2>
-          <p>
-            Rankings are sorted by sales first. If agents are tied in sales, the higher
-            conversion rate takes the lead.
-          </p>
-        </section>
-
-        <section className="admin-sales-layout">
-          <div className="admin-sales-form-card">
-            <div className="admin-sales-card-head">
-              <div>
-                <p className="admin-sales-card-kicker">Daily Entry</p>
-                <h3>{editingId ? "Edit Sales Entry" : "Add Sales Entry"}</h3>
-              </div>
-            </div>
-
-            <form className="admin-sales-form" onSubmit={handleSave}>
-              <label>
-                Sales Date
-                <input
-                  type="date"
-                  name="sales_date"
-                  value={form.sales_date}
-                  onChange={handleChange}
-                />
-              </label>
-
-              <label>
-                Agent Name
-                <input
-                  type="text"
-                  name="agent_name"
-                  value={form.agent_name}
-                  onChange={handleChange}
-                  placeholder="Enter agent name"
-                />
-              </label>
-
-              <label>
-                Sales Count
-                <input
-                  type="number"
-                  min="0"
-                  name="sales_count"
-                  value={form.sales_count}
-                  onChange={handleChange}
-                  placeholder="0"
-                />
-              </label>
-
-              <label>
-                Conversion Rate
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  name="conversion_rate"
-                  value={form.conversion_rate}
-                  onChange={handleChange}
-                  placeholder="0.00"
-                />
-              </label>
-
-              <div className="admin-sales-form-actions">
-                <button
-                  type="submit"
-                  className="admin-sales-primary-btn"
-                  disabled={saving}
-                >
-                  {saving ? "Saving..." : editingId ? "Update Entry" : "Save Entry"}
-                </button>
-
-                <button
-                  type="button"
-                  className="admin-sales-secondary-btn"
-                  onClick={resetForm}
-                >
-                  Clear Form
-                </button>
-              </div>
-
-              {message ? <p className="admin-sales-message">{message}</p> : null}
-            </form>
+      <main className="admin-main">
+        <section className="admin-hero-card">
+          <div className="admin-hero-copy">
+            <p className="admin-hero-tag">Control Center</p>
+            <h2>Manage the Lion Nation experience from one place.</h2>
+            <p>
+              Post the daily clue, review suggestions, monitor winners, manage
+              rewards, and control the homepage content agents see first.
+            </p>
           </div>
 
-          <div className="admin-sales-boards-grid">
-            {renderTop10Card(
-              "Previous Day",
-              previousDayTop10,
-              "previous_day_sales",
-              "previous_day_conversion"
-            )}
-            {renderTop10Card(
-              "Current Month",
-              monthTop10,
-              "month_sales",
-              "month_conversion"
-            )}
-            {renderTop10Card(
-              "Current Quarter",
-              quarterTop10,
-              "quarter_sales",
-              "quarter_conversion"
-            )}
+          <div className="admin-hero-actions">
+            <button
+              className="admin-hero-btn primary"
+              onClick={() => goTo("/admin/clue")}
+            >
+              Manage Daily Clue
+            </button>
+
+            <button
+              className="admin-hero-btn"
+              onClick={() => goTo("/admin/content")}
+            >
+              Manage Portal Content
+            </button>
           </div>
         </section>
 
-        <section className="admin-sales-entries-card">
-          <div className="admin-sales-card-head">
+        <section className="admin-results-row">
+          <div className="admin-results-card">
+            <p className="admin-results-label">Today’s Winner</p>
+            <h3>{todayWinnerName || "No winner yet"}</h3>
+            <p>{todayWinnerPrize || "Prize will show here once someone wins."}</p>
+          </div>
+
+          <div className="admin-results-card">
+            <p className="admin-results-label">First Correct Guess</p>
+            <h3>{firstCorrectName || "No one yet"}</h3>
+            <p>{correctAnswer || "Answer will show after first correct guess."}</p>
+          </div>
+        </section>
+
+        <section className="admin-section">
+          <div className="admin-section-head">
             <div>
-              <p className="admin-sales-card-kicker">History</p>
-              <h3>Agent Totals</h3>
+              <p className="admin-section-kicker">Live Management</p>
+              <h2>Core Admin Pages</h2>
             </div>
           </div>
 
-          <div className="admin-sales-filters">
-            <label>
-              Filter by Month
-              <input
-                type="month"
-                value={filterMonth}
-                onChange={(e) => setFilterMonth(e.target.value)}
-              />
-            </label>
-
-            <label>
-              Start Date
-              <input
-                type="date"
-                value={filterStartDate}
-                onChange={(e) => setFilterStartDate(e.target.value)}
-              />
-            </label>
-
-            <label>
-              End Date
-              <input
-                type="date"
-                value={filterEndDate}
-                onChange={(e) => setFilterEndDate(e.target.value)}
-              />
-            </label>
-
-            <label>
-              Filter by Agent Name
-              <input
-                type="text"
-                value={filterAgentName}
-                onChange={(e) => setFilterAgentName(e.target.value)}
-                placeholder="Search agent name"
-              />
-            </label>
+          <div className="admin-grid">
+            <button
+              type="button"
+              className="admin-box admin-box-button"
+              onClick={() => goTo("/admin/clue")}
+            >
+              <span className="admin-box-badge">Daily Challenge</span>
+              <h3>Manage Daily Clue</h3>
+              <p>Create, update, and control the clue agents see each day.</p>
+            </button>
 
             <button
               type="button"
-              className="admin-sales-secondary-btn"
-              onClick={clearFilters}
+              className="admin-box admin-box-button"
+              onClick={() => goTo("/admin/content")}
             >
-              Clear Filters
+              <span className="admin-box-badge">Homepage</span>
+              <h3>Manage Announcements</h3>
+              <p>Control the important message agents see immediately on login.</p>
+            </button>
+
+            <button
+              type="button"
+              className="admin-box admin-box-button"
+              onClick={() => goTo("/admin/prizes")}
+            >
+              <span className="admin-box-badge">Rewards</span>
+              <h3>Manage Prize Wheel</h3>
+              <p>Set active prizes, organize rewards, and control what can be won.</p>
+            </button>
+
+            <button
+              type="button"
+              className="admin-box admin-box-button"
+              onClick={() => goTo("/admin/suggestions")}
+            >
+              <span className="admin-box-badge">Feedback</span>
+              <h3>Manage Suggestion Box</h3>
+              <p>Review feedback, anonymous submissions, and export-ready ideas.</p>
             </button>
           </div>
+        </section>
 
-          <div className="admin-sales-summary-grid">
-            <div className="admin-sales-summary-card">
-              <p className="admin-sales-summary-label">
-                {filterMonth ? "Selected Month" : "Current Filter View"}
-              </p>
-              <h4>{filteredSummary.monthLabel}</h4>
-            </div>
-
-            <div className="admin-sales-summary-card">
-              <p className="admin-sales-summary-label">Total Sales</p>
-              <h4>{filteredSummary.totalSales}</h4>
-            </div>
-
-            <div className="admin-sales-summary-card">
-              <p className="admin-sales-summary-label">Average Conversion</p>
-              <h4>{formatConversion(filteredSummary.averageConversion)}</h4>
-            </div>
-
-            <div className="admin-sales-summary-card">
-              <p className="admin-sales-summary-label">Agents</p>
-              <h4>{filteredSummary.totalAgents}</h4>
+        <section className="admin-section">
+          <div className="admin-section-head">
+            <div>
+              <p className="admin-section-kicker">Portal Features</p>
+              <h2>Next Level Engagement</h2>
             </div>
           </div>
 
-          <p className="admin-sales-filter-count">
-            Showing {groupedAgentEntries.length} agent totals from {filteredEntries.length} daily entries
-          </p>
+          <div className="admin-grid">
+            <button
+              type="button"
+              className="admin-box admin-box-button"
+              onClick={() => goTo("/admin/videos")}
+            >
+              <span className="admin-box-badge">Video</span>
+              <h3>Manage Video Message</h3>
+              <p>Post the Lion Nation Video Message and let agents like and comment.</p>
+            </button>
 
-          {groupedAgentEntries.length === 0 ? (
-            <div className="admin-sales-empty">No sales entries match your filters.</div>
-          ) : (
-            <div className="admin-sales-entry-list">
-              {groupedAgentEntries.map((agent) => {
-                const isExpanded = Boolean(expandedAgents[agent.agent_name]);
+            <button
+              type="button"
+              className="admin-box admin-box-button"
+              onClick={() => goTo("/admin/sales")}
+            >
+              <span className="admin-box-badge">Sales</span>
+              <h3>Manage Sales Leaderboard</h3>
+              <p>Post daily sales and calculate Top 10 for previous day, month, and quarter.</p>
+            </button>
 
-                return (
-                  <div className="admin-sales-entry-item" key={agent.agent_name}>
-                    <div>
-                      <h4>{agent.agent_name}</h4>
-                      <p>Total Sales: {agent.total_sales}</p>
-                      <p>Average Conversion: {formatConversion(agent.average_conversion)}</p>
-                      <p>Entries Included: {agent.entry_count}</p>
-                      <p>Latest Entry: {agent.latest_date || "N/A"}</p>
-                    </div>
+            <button
+              type="button"
+              className="admin-box admin-box-button"
+              onClick={() => goTo("/admin/weekly-focus")}
+            >
+              <span className="admin-box-badge">Morale</span>
+              <h3>Manage Weekly Focus</h3>
+              <p>Post updates, morale content, and important reminders for agents.</p>
+            </button>
 
-                    <div className="admin-sales-entry-right">
-                      <strong>{agent.total_sales}</strong>
-                      <div className="admin-sales-entry-actions">
-                        <button
-                          className="admin-sales-small-btn"
-                          onClick={() => toggleAgentExpansion(agent.agent_name)}
-                        >
-                          {isExpanded ? "Hide Entries" : "Show Entries"}
-                        </button>
-                      </div>
-                    </div>
+            <button
+  type="button"
+  className="admin-box admin-box-button"
+  onClick={() => goTo("/admin/sales-tip")}
+>
+  <span className="admin-box-badge">Coaching</span>
+  <h3>Manage Sales Tip</h3>
+  <p>Post one active sales tip at a time to guide agent conversations.</p>
+</button>
 
-                    {isExpanded ? (
-                      <div className="admin-sales-agent-detail-list">
-                        {agent.rows.map((entry) => (
-                          <div className="admin-sales-agent-detail-item" key={entry.id}>
-                            <div>
-                              <h5>{entry.sales_date}</h5>
-                              <p>Sales: {entry.sales_count}</p>
-                              <p>Conversion: {formatConversion(entry.conversion_rate)}</p>
-                            </div>
-
-                            <div className="admin-sales-entry-actions">
-                              <button
-                                className="admin-sales-small-btn"
-                                onClick={() => handleEdit(entry)}
-                              >
-                                Edit
-                              </button>
-                              <button
-                                className="admin-sales-small-btn danger"
-                                onClick={() => handleDelete(entry.id)}
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+            <button
+              type="button"
+              className="admin-box admin-box-button"
+              onClick={() => goTo("/admin/bingo")}
+            >
+              <span className="admin-box-badge">Engagement</span>
+              <h3>Manage Bingo</h3>
+              <p>Build the live blackout board agents complete in Mega Chat.</p>
+            </button>
+          </div>
         </section>
+
+        <AdminWinnerHistory />
+        <AdminResetPanel />
       </main>
     </div>
   );
