@@ -498,7 +498,7 @@ export default function PortalHome() {
 
             <div className="portal-card-body">
               <p className="portal-card-message">
-                Which every name you perfer to call it... these plans are essential! 
+                Which ever name you prefer to call it... these plans are essential! 
                 Medigaps are an easy win this time of year. No hunting for SEPs. 
                 Most clients who enroll in Medigap plans, tend to remain in them.  
                 Why?
