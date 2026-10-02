@@ -1,293 +1,314 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+
 import { supabase } from "./supabase";
 
-import AdminPrizes from "./AdminPrizes";
-import AdminWeeklyFocus from "./AdminWeeklyFocus";
-import AdminSalesTip from "./AdminSalesTip";
-import SuggestionBox from "./SuggestionBox";
 import App from "./App";
 import PortalHome from "./PortalHome";
+import LeaderHome from "./LeaderHome";
 import AdminHome from "./AdminHome";
-import AdminCluePage from "./AdminCluePage";
-import AdminSuggestionsPage from "./AdminSuggestionsPage";
-import AdminPortalContent from "./AdminPortalContent";
-import AdminVideoMessage from "./AdminVideoMessage";
-import PortalVideos from "./PortalVideos";
-import AdminBingo from "./AdminBingo";
-import PortalBingo from "./PortalBingo";
-import AdminSalesLeaderboard from "./AdminSalesLeaderboard";
-import PortalSalesLeaderboard from "./PortalSalesLeaderboard";
-import WeeklyFocus from "./WeeklyFocus";
-import SalesTip from "./SalesTip"; // ✅ ADD THIS
 
 import "./index.css";
 
-function ProtectedRoute({ children }) {
-  const [session, setSession] = React.useState(undefined);
+/* =========================================================
+   LOADING SCREEN
+   ========================================================= */
+
+function LoadingScreen() {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "14px",
+        background: "#0a0a0a",
+        color: "white",
+        fontFamily:
+          "Inter, Arial, Helvetica, sans-serif",
+      }}
+    >
+      <img
+        src="/Lion Nation.png"
+        alt="Lion Nation"
+        style={{
+          width: "90px",
+          height: "90px",
+          objectFit: "contain",
+        }}
+      />
+
+      <div
+        style={{
+          color: "#d4af37",
+          fontWeight: "800",
+          fontSize: "0.85rem",
+          letterSpacing: "0.08em",
+        }}
+      >
+        LION NATION
+      </div>
+
+      <div
+        style={{
+          color: "#aaaaaa",
+          fontSize: "0.8rem",
+        }}
+      >
+        Loading portal...
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   SECURE ROLE ROUTE
+   ========================================================= */
+
+function RoleRoute({
+  allowedRoles,
+  children,
+}) {
+  const [status, setStatus] =
+    React.useState("loading");
 
   React.useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-    });
+    let mounted = true;
+
+    async function checkAccess() {
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (
+          userError ||
+          !user
+        ) {
+          if (mounted) {
+            setStatus("login");
+          }
+
+          return;
+        }
+
+        const {
+          data: person,
+          error: personError,
+        } = await supabase
+          .from("aep_people")
+          .select(`
+            id,
+            role,
+            is_active
+          `)
+          .eq(
+            "auth_user_id",
+            user.id
+          )
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (
+          personError ||
+          !person
+        ) {
+          await supabase.auth.signOut();
+
+          if (mounted) {
+            setStatus("login");
+          }
+
+          return;
+        }
+
+        if (
+          allowedRoles.includes(
+            person.role
+          )
+        ) {
+          if (mounted) {
+            setStatus("allowed");
+          }
+
+          return;
+        }
+
+        if (mounted) {
+          if (
+            person.role === "admin"
+          ) {
+            setStatus("admin");
+          } else if (
+            person.role === "leader"
+          ) {
+            setStatus("leader");
+          } else if (
+            person.role === "agent"
+          ) {
+            setStatus("agent");
+          } else {
+            setStatus("login");
+          }
+        }
+      } catch (error) {
+        console.error(
+          "Route access error:",
+          error
+        );
+
+        if (mounted) {
+          setStatus("login");
+        }
+      }
+    }
+
+    checkAccess();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
+    } =
+      supabase.auth.onAuthStateChange(
+        (event) => {
+          if (
+            event === "SIGNED_OUT"
+          ) {
+            setStatus("login");
+          }
+        }
+      );
 
-    return () => subscription.unsubscribe();
-  }, []);
-
-  if (session === undefined) {
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#0a0a0a",
-          color: "white",
-          fontFamily: "Arial, Helvetica, sans-serif",
-        }}
-      >
-        Loading...
-      </div>
-    );
-  }
-
-  return session ? children : <Navigate to="/" replace />;
-}
-
-function AdminRoute({ children }) {
-  const [status, setStatus] = React.useState("loading");
-
-  React.useEffect(() => {
-    const checkRole = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session?.user) {
-        setStatus("denied");
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .maybeSingle();
-
-      if (profile?.role === "admin" || profile?.role === "leader") {
-        setStatus("allowed");
-      } else {
-        setStatus("denied");
-      }
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
     };
-
-    checkRole();
-  }, []);
+  }, [allowedRoles]);
 
   if (status === "loading") {
+    return <LoadingScreen />;
+  }
+
+  if (status === "login") {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#0a0a0a",
-          color: "white",
-          fontFamily: "Arial, Helvetica, sans-serif",
-        }}
-      >
-        Loading...
-      </div>
+      <Navigate
+        to="/"
+        replace
+      />
     );
   }
 
-  return status === "allowed" ? children : <Navigate to="/portal" replace />;
+  if (status === "admin") {
+    return (
+      <Navigate
+        to="/admin"
+        replace
+      />
+    );
+  }
+
+  if (status === "leader") {
+    return (
+      <Navigate
+        to="/leader"
+        replace
+      />
+    );
+  }
+
+  if (status === "agent") {
+    return (
+      <Navigate
+        to="/portal"
+        replace
+      />
+    );
+  }
+
+  return children;
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+/* =========================================================
+   APP ROUTES
+   ========================================================= */
+
+ReactDOM.createRoot(
+  document.getElementById("root")
+).render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<App />} />
+        {/* LOGIN */}
+
+        <Route
+          path="/"
+          element={<App />}
+        />
+
+        {/* AGENT PORTAL */}
 
         <Route
           path="/portal"
           element={
-            <ProtectedRoute>
+            <RoleRoute
+              allowedRoles={[
+                "agent",
+              ]}
+            >
               <PortalHome />
-            </ProtectedRoute>
+            </RoleRoute>
           }
         />
 
+        {/* LEADER PORTAL */}
+
         <Route
-          path="/portal/weekly-focus"
+          path="/leader"
           element={
-            <ProtectedRoute>
-              <WeeklyFocus />
-            </ProtectedRoute>
+            <RoleRoute
+              allowedRoles={[
+                "leader",
+              ]}
+            >
+              <LeaderHome />
+            </RoleRoute>
           }
         />
 
-        {/* ✅ NEW SALES TIP ROUTE */}
-        <Route
-          path="/portal/sales-tip"
-          element={
-            <ProtectedRoute>
-              <SalesTip />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/portal/videos"
-          element={
-            <ProtectedRoute>
-              <PortalVideos />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/portal/bingo"
-          element={
-            <ProtectedRoute>
-              <PortalBingo />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/portal/sales"
-          element={
-            <ProtectedRoute>
-              <PortalSalesLeaderboard />
-            </ProtectedRoute>
-          }
-        />
+        {/* ADMIN PORTAL */}
 
         <Route
           path="/admin"
           element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <AdminHome />
-              </AdminRoute>
-            </ProtectedRoute>
+            <RoleRoute
+              allowedRoles={[
+                "admin",
+              ]}
+            >
+              <AdminHome />
+            </RoleRoute>
           }
         />
 
-        <Route
-          path="/admin/clue"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <AdminCluePage />
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
+        {/* UNKNOWN ROUTE */}
 
         <Route
-          path="/admin/suggestions"
+          path="*"
           element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <AdminSuggestionsPage />
-              </AdminRoute>
-            </ProtectedRoute>
+            <Navigate
+              to="/"
+              replace
+            />
           }
         />
-
-        <Route
-          path="/admin/content"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <AdminPortalContent />
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/admin/videos"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <AdminVideoMessage />
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/admin/bingo"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <AdminBingo />
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/admin/sales"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <AdminSalesLeaderboard />
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-  path="/admin/weekly-focus"
-  element={
-    <ProtectedRoute>
-      <AdminRoute>
-        <AdminWeeklyFocus />
-      </AdminRoute>
-    </ProtectedRoute>
-  }
-/>
-        <Route
-  path="/portal/suggestions"
-  element={
-    <ProtectedRoute>
-      <SuggestionBox />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/admin/prizes"
-  element={
-    <ProtectedRoute>
-      <AdminRoute>
-        <AdminPrizes />
-      </AdminRoute>
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/admin/sales-tip"
-  element={
-    <ProtectedRoute>
-      <AdminRoute>
-        <AdminSalesTip />
-      </AdminRoute>
-    </ProtectedRoute>
-  }
-/>
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

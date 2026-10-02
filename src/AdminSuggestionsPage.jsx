@@ -14,20 +14,7 @@ export default function AdminSuggestionsPage() {
     setLoading(true);
     setStatusMessage("");
 
-    const { data, error } = await supabase
-      .from("suggestions")
-      .select(`
-        id,
-        subject,
-        suggestion_text,
-        is_anonymous,
-        status,
-        created_at,
-        profiles:submitted_by (
-          full_name
-        )
-      `)
-      .order("created_at", { ascending: false });
+    const { data, error } = await supabase.rpc("get_admin_suggestions");
 
     if (error) {
       console.log("Suggestions error:", error.message);
@@ -45,9 +32,7 @@ export default function AdminSuggestionsPage() {
 
   const exportRows = useMemo(() => {
     return suggestions.map((item) => ({
-      submitted_by: item.is_anonymous
-        ? "Anonymous"
-        : item.profiles?.full_name || "Unknown",
+      submitted_by: item.submitted_by_name || "Unknown",
       subject: item.subject || "",
       suggestion_text: item.suggestion_text || "",
       status: item.status || "",
@@ -174,47 +159,43 @@ export default function AdminSuggestionsPage() {
           <p className="admin-suggestions-empty">No suggestions yet.</p>
         ) : (
           <div className="admin-suggestions-list">
-            {suggestions.map((item) => {
-              const name = item.is_anonymous
-                ? "Anonymous"
-                : item.profiles?.full_name || "Unknown";
-
-              return (
-                <div className="admin-suggestion-row" key={item.id}>
-                  <div className="admin-suggestion-top">
-                    <div>
-                      <p className="admin-suggestion-name">{name}</p>
-                      <p className="admin-suggestion-date">
-                        {new Date(item.created_at).toLocaleString()}
-                      </p>
-                    </div>
-
-                    <div className="admin-suggestion-top-right">
-                      <span className="admin-suggestion-status">
-                        {item.status}
-                      </span>
-
-                      <button
-                        type="button"
-                        className="admin-suggestion-delete-btn"
-                        onClick={() => handleDeleteSuggestion(item.id)}
-                        disabled={deletingId === item.id}
-                      >
-                        {deletingId === item.id ? "Deleting..." : "Delete"}
-                      </button>
-                    </div>
+            {suggestions.map((item) => (
+              <div className="admin-suggestion-row" key={item.id}>
+                <div className="admin-suggestion-top">
+                  <div>
+                    <p className="admin-suggestion-name">
+                      {item.submitted_by_name || "Unknown"}
+                    </p>
+                    <p className="admin-suggestion-date">
+                      {new Date(item.created_at).toLocaleString()}
+                    </p>
                   </div>
 
-                  {item.subject ? (
-                    <h3 className="admin-suggestion-subject">{item.subject}</h3>
-                  ) : null}
+                  <div className="admin-suggestion-top-right">
+                    <span className="admin-suggestion-status">
+                      {item.status}
+                    </span>
 
-                  <p className="admin-suggestion-text">
-                    {item.suggestion_text}
-                  </p>
+                    <button
+                      type="button"
+                      className="admin-suggestion-delete-btn"
+                      onClick={() => handleDeleteSuggestion(item.id)}
+                      disabled={deletingId === item.id}
+                    >
+                      {deletingId === item.id ? "Deleting..." : "Delete"}
+                    </button>
+                  </div>
                 </div>
-              );
-            })}
+
+                {item.subject ? (
+                  <h3 className="admin-suggestion-subject">{item.subject}</h3>
+                ) : null}
+
+                <p className="admin-suggestion-text">
+                  {item.suggestion_text}
+                </p>
+              </div>
+            ))}
           </div>
         )}
       </section>

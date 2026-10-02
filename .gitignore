@@ -22,3 +22,18 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local environment secrets
+.env
+.env.local
+.env.*.local
+
+# Local environment secrets
+.env
+.env.local
+.env.*.local
+
+# Private AEP files
+.env.local
+AEP-Login-Sheet.csv
+AEP-Login-Sheet-PREVIEW.csv

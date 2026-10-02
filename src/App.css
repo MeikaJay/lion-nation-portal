@@ -2,165 +2,287 @@
   box-sizing: border-box;
 }
 
-body {
-  margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
-  background: #0a0a0a;
-}
-
-#root {
+.aep-login-page {
   min-height: 100vh;
-}
-
-.login-page {
-  min-height: 100vh;
-  position: relative;
+  width: 100%;
   background:
-    radial-gradient(circle at top, rgba(212, 153, 33, 0.18), transparent 35%),
-    linear-gradient(135deg, #050505 0%, #111111 50%, #1a1205 100%);
+    radial-gradient(
+      circle at 20% 10%,
+      rgba(212, 175, 55, 0.12),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 85% 80%,
+      rgba(212, 175, 55, 0.08),
+      transparent 35%
+    ),
+    linear-gradient(
+      145deg,
+      #080808 0%,
+      #111111 48%,
+      #080808 100%
+    );
+
   display: flex;
-  align-items: center;
   justify-content: center;
-  padding: 32px;
+  align-items: center;
+
+  padding: 40px 20px;
+
+  position: relative;
   overflow: hidden;
+
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
 }
 
-.login-overlay {
+.aep-login-glow {
   position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom right,
-    rgba(255, 196, 79, 0.05),
-    rgba(0, 0, 0, 0.15)
-  );
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
 }
 
-.login-card {
+.aep-login-glow-one {
+  width: 300px;
+  height: 300px;
+
+  background: rgba(212, 175, 55, 0.08);
+
+  top: -100px;
+  left: -80px;
+}
+
+.aep-login-glow-two {
+  width: 360px;
+  height: 360px;
+
+  background: rgba(212, 175, 55, 0.06);
+
+  right: -120px;
+  bottom: -140px;
+}
+
+.aep-login-card {
+  width: 100%;
+  max-width: 520px;
+
+  background: rgba(18, 18, 18, 0.96);
+
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 24px;
+
+  padding: 38px;
+
   position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: 1000px;
-  min-height: 620px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  border-radius: 28px;
-  overflow: hidden;
-  background: rgba(15, 15, 15, 0.92);
-  border: 1px solid rgba(255, 191, 73, 0.22);
-  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.45);
+  z-index: 2;
+
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.02);
 }
 
-.logo-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  background:
-    linear-gradient(to bottom, rgba(255, 184, 56, 0.12), rgba(0, 0, 0, 0.15)),
-    #090909;
-}
-
-.lion-logo {
-  width: 100%;
-  max-width: 420px;
-  height: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 10px 30px rgba(255, 174, 0, 0.18));
-}
-
-.login-content {
-  padding: 64px 48px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  color: white;
-}
-
-.portal-label {
-  margin: 0 0 10px;
-  color: #d9a441;
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-}
-
-.login-content h1 {
-  margin: 0;
-  font-size: 48px;
-  line-height: 1.05;
-}
-
-.subtitle {
-  margin-top: 14px;
+.aep-login-brand {
+  text-align: center;
   margin-bottom: 32px;
-  color: #d3d3d3;
-  font-size: 18px;
-  line-height: 1.5;
 }
 
-.login-form {
+.aep-login-logo {
+  width: 125px;
+  max-height: 125px;
+  object-fit: contain;
+
+  display: block;
+
+  margin: 0 auto 18px;
+}
+
+.aep-login-eyebrow {
+  margin: 0 0 7px;
+
+  color: #d4af37;
+
+  font-size: 0.78rem;
+  font-weight: 800;
+
+  letter-spacing: 0.22em;
+}
+
+.aep-login-brand h1 {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
+  line-height: 1.08;
+
+  font-weight: 800;
+}
+
+.aep-login-tagline {
+  margin: 12px 0 0;
+
+  color: #bcbcbc;
+
+  font-size: 0.96rem;
+}
+
+.aep-login-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
-.login-form input {
+.aep-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aep-field label {
+  color: #e9e9e9;
+
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.aep-field input {
   width: 100%;
-  padding: 16px 18px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 191, 73, 0.18);
-  background: rgba(255, 255, 255, 0.06);
-  color: white;
-  font-size: 16px;
+
+  border: 1px solid #353535;
+  border-radius: 12px;
+
+  background: #0b0b0b;
+
+  color: #ffffff;
+
+  padding: 15px 16px;
+
+  font-size: 1rem;
+
   outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.login-form input::placeholder {
-  color: #b6b6b6;
+.aep-field input::placeholder {
+  color: #777777;
 }
 
-.login-form input:focus {
-  border-color: #d9a441;
-  box-shadow: 0 0 0 3px rgba(217, 164, 65, 0.16);
+.aep-field input:focus {
+  border-color: #d4af37;
+
+  box-shadow:
+    0 0 0 3px rgba(212, 175, 55, 0.12);
 }
 
-.login-form button {
-  margin-top: 8px;
-  padding: 16px 18px;
+.aep-login-button {
+  width: 100%;
+
   border: none;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #f5b234, #b97812);
-  color: #111;
-  font-size: 16px;
-  font-weight: 800;
+  border-radius: 12px;
+
+  background: linear-gradient(
+    135deg,
+    #e0bd4f,
+    #b88a17
+  );
+
+  color: #090909;
+
+  padding: 15px 18px;
+
+  margin-top: 4px;
+
+  font-size: 0.95rem;
+  font-weight: 900;
+
+  letter-spacing: 0.03em;
+
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
 }
 
-.login-form button:hover {
+.aep-login-button:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(245, 178, 52, 0.25);
+
+  box-shadow:
+    0 10px 28px rgba(212, 175, 55, 0.2);
 }
 
-@media (max-width: 900px) {
-  .login-card {
-    grid-template-columns: 1fr;
+.aep-login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.aep-login-error {
+  padding: 12px 14px;
+
+  border: 1px solid rgba(255, 115, 115, 0.28);
+  border-radius: 10px;
+
+  background: rgba(150, 35, 35, 0.12);
+
+  color: #ffb5b5;
+
+  font-size: 0.87rem;
+  line-height: 1.45;
+}
+
+.aep-login-notice {
+  margin-top: 30px;
+  padding-top: 22px;
+
+  border-top: 1px solid #292929;
+
+  text-align: center;
+}
+
+.aep-login-notice strong {
+  display: block;
+
+  color: #d4af37;
+
+  font-size: 0.69rem;
+
+  letter-spacing: 0.12em;
+
+  margin-bottom: 7px;
+}
+
+.aep-login-notice p {
+  max-width: 410px;
+
+  margin: 0 auto;
+
+  color: #777777;
+
+  font-size: 0.7rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 600px) {
+  .aep-login-page {
+    padding: 20px 14px;
   }
 
-  .logo-wrap {
-    padding: 28px 28px 10px;
+  .aep-login-card {
+    padding: 28px 20px;
+    border-radius: 20px;
   }
 
-  .lion-logo {
-    max-width: 260px;
-  }
-
-  .login-content {
-    padding: 32px 24px 40px;
-  }
-
-  .login-content h1 {
-    font-size: 38px;
+  .aep-login-logo {
+    width: 105px;
   }
 }
