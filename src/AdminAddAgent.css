@@ -1,0 +1,95 @@
+
+.admin-add-agent {
+    background: #fffdf8;
+    border: 1px solid #e8dfcd;
+    border-radius: 18px;
+    padding: 26px;
+    margin: 28px 0;
+    color: #222;
+  }
+  
+  .admin-add-agent-heading span {
+    color: #a77b21;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 2px;
+  }
+  
+  .admin-add-agent-heading h3 {
+    font-size: 25px;
+    margin: 8px 0;
+  }
+  
+  .admin-add-agent-heading p {
+    color: #777;
+    margin-bottom: 22px;
+  }
+  
+  .admin-add-agent-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+  
+  .admin-add-agent-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  
+  .admin-add-agent-grid input,
+  .admin-add-agent-grid select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d9d2c3;
+    border-radius: 9px;
+    background: white;
+    color: #222;
+  }
+  
+  .admin-add-agent-grid small {
+    color: #888;
+    font-weight: 400;
+  }
+  
+  .admin-add-agent form > button {
+    margin-top: 24px;
+    padding: 14px 22px;
+    background: #191919;
+    color: #edc66d;
+    border: 0;
+    border-radius: 10px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  
+  .admin-add-agent form > button:disabled {
+    opacity: .6;
+    cursor: wait;
+  }
+  
+  .admin-add-agent-message {
+    padding: 13px 16px;
+    background: #fff0eb;
+    border-radius: 9px;
+    margin-bottom: 20px;
+  }
+  
+  .admin-add-agent-message.success {
+    background: #f5ecd3;
+  }
+  
+  .admin-add-agent-footnote {
+    color: #777;
+    font-size: 12px;
+    margin-top: 18px;
+  }
+  
+  @media (max-width: 600px) {
+    .admin-add-agent-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  

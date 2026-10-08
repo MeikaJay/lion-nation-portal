@@ -1,12 +1,13 @@
+
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "./supabase";
 
 const METRICS = [
-  { value: "submits", label: "Sales / Submits" },
+  { value: "submits", label: "MM Submits" },
   { value: "csr_transfers", label: "CSR Transfers" },
   { value: "productivity", label: "Productivity %" },
   { value: "enrollment_links", label: "Enrollment Links" },
-  { value: "talk_time", label: "Talk Time Hours" },
+  { value: "talk_time", label: "AWS Online Hours" },
   { value: "conversion", label: "Conversion %" },
 ];
 
@@ -17,54 +18,92 @@ const AUDIENCES = [
   { value: "SBA", label: "SBA" },
 ];
 
-function metricLabel(value) {
+const EMPTY_RAFFLE = {
+  raffle_name: "",
+  prize_name: "",
+  description: "",
+  start_date: "",
+  end_date: "",
+  audience: "everyone",
+  is_active: true,
+};
+
+const EMPTY_REQUIREMENT = {
+  audience: "everyone",
+  metric_type: "submits",
+  required_value: "",
+};
+
+const labelFor = (items, value) =>
+  items.find((item) => item.value === value)?.label || value;
+
+function RuleSelect({ options, value, onChange }) {
   return (
-    METRICS.find((metric) => metric.value === value)?.label ||
-    value
+    <select value={value} onChange={(e) => onChange(e.target.value)}>
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
   );
 }
 
-function audienceLabel(value) {
+function NumberField({ value, onSave, placeholder, min = 0 }) {
+  const [draft, setDraft] = useState(value ?? "");
+
+  useEffect(() => {
+    setDraft(value ?? "");
+  }, [value]);
+
   return (
-    AUDIENCES.find((audience) => audience.value === value)
-      ?.label || value
+    <input
+      type="number"
+      min={min}
+      step="0.01"
+      value={draft}
+      placeholder={placeholder}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => {
+        if (String(draft) !== String(value ?? "")) {
+          onSave(draft);
+        }
+      }}
+    />
   );
 }
 
 export default function AdminRaffles() {
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState("");
+
   const [raffles, setRaffles] = useState([]);
   const [requirements, setRequirements] = useState([]);
   const [ticketRules, setTicketRules] = useState([]);
   const [bonusRules, setBonusRules] = useState([]);
 
   const [selectedId, setSelectedId] = useState(null);
-  const [notice, setNotice] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState(EMPTY_RAFFLE);
 
-  const [form, setForm] = useState({
-    raffle_name: "",
-    prize_name: "",
-    description: "",
-    start_date: "",
-    end_date: "",
-    audience: "everyone",
-    is_active: true,
-  });
+  const [newRequirement, setNewRequirement] = useState(
+    EMPTY_REQUIREMENT
+  );
+  const [addingRequirement, setAddingRequirement] = useState(false);
 
   useEffect(() => {
     loadRaffles();
   }, []);
 
   const selectedRaffle = useMemo(
-    () => raffles.find((raffle) => raffle.id === selectedId),
+    () => raffles.find((item) => item.id === selectedId),
     [raffles, selectedId]
   );
 
   const selectedRequirements = useMemo(
     () =>
       requirements.filter(
-        (requirement) => requirement.raffle_id === selectedId
+        (item) => item.raffle_id === selectedId
       ),
     [requirements, selectedId]
   );
@@ -72,7 +111,7 @@ export default function AdminRaffles() {
   const selectedTicketRules = useMemo(
     () =>
       ticketRules
-        .filter((rule) => rule.raffle_id === selectedId)
+        .filter((item) => item.raffle_id === selectedId)
         .sort(
           (a, b) =>
             Number(a.display_order || 0) -
@@ -83,81 +122,68 @@ export default function AdminRaffles() {
 
   const selectedBonusRules = useMemo(
     () =>
-      bonusRules.filter((rule) => rule.raffle_id === selectedId),
+      bonusRules.filter(
+        (item) => item.raffle_id === selectedId
+      ),
     [bonusRules, selectedId]
   );
 
   async function loadRaffles(preferredId = null) {
     setLoading(true);
 
-    const [
-      raffleResult,
-      requirementResult,
-      ticketResult,
-      bonusResult,
-    ] = await Promise.all([
-      supabase
-        .from("aep_raffles")
-        .select("*")
-        .order("created_at", { ascending: false }),
+    try {
+      const [raffleResult, requirementResult, ticketResult, bonusResult] =
+        await Promise.all([
+          supabase
+            .from("aep_raffles")
+            .select("*")
+            .order("created_at", { ascending: false }),
+          supabase.from("aep_raffle_requirements").select("*"),
+          supabase.from("aep_raffle_ticket_rules").select("*"),
+          supabase.from("aep_raffle_bonus_rules").select("*"),
+        ]);
 
-      supabase
-        .from("aep_raffle_requirements")
-        .select("*"),
+      const error =
+        raffleResult.error ||
+        requirementResult.error ||
+        ticketResult.error ||
+        bonusResult.error;
 
-      supabase
-        .from("aep_raffle_ticket_rules")
-        .select("*"),
+      if (error) throw error;
 
-      supabase
-        .from("aep_raffle_bonus_rules")
-        .select("*"),
-    ]);
+      const loaded = raffleResult.data || [];
 
-    const error =
-      raffleResult.error ||
-      requirementResult.error ||
-      ticketResult.error ||
-      bonusResult.error;
+      setRaffles(loaded);
+      setRequirements(requirementResult.data || []);
+      setTicketRules(ticketResult.data || []);
+      setBonusRules(bonusResult.data || []);
 
-    if (error) {
-      console.error(error);
-      setNotice(error.message);
-      setLoading(false);
-      return;
-    }
+      const nextId =
+        preferredId ||
+        selectedId ||
+        loaded[0]?.id ||
+        null;
 
-    const loadedRaffles = raffleResult.data || [];
+      const selected = loaded.find((item) => item.id === nextId);
 
-    setRaffles(loadedRaffles);
-    setRequirements(requirementResult.data || []);
-    setTicketRules(ticketResult.data || []);
-    setBonusRules(bonusResult.data || []);
-
-    const nextId =
-      preferredId ||
-      selectedId ||
-      loadedRaffles[0]?.id ||
-      null;
-
-    if (nextId) {
-      const raffle = loadedRaffles.find(
-        (item) => item.id === nextId
-      );
-
-      if (raffle) {
-        selectRaffle(raffle, false);
+      if (selected) {
+        selectRaffle(selected, false);
+      } else {
+        setSelectedId(null);
+        setForm(EMPTY_RAFFLE);
       }
+    } catch (error) {
+      console.error(error);
+      setNotice(error.message || "Could not load raffles.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   function selectRaffle(raffle, clearNotice = true) {
     if (clearNotice) setNotice("");
 
     setSelectedId(raffle.id);
-
     setForm({
       raffle_name: raffle.raffle_name || "",
       prize_name: raffle.prize_name || "",
@@ -165,23 +191,20 @@ export default function AdminRaffles() {
       start_date: raffle.start_date || "",
       end_date: raffle.end_date || "",
       audience: raffle.audience || "everyone",
-      is_active: Boolean(raffle.is_active),
+      is_active: raffle.is_active !== false,
+    });
+
+    setNewRequirement({
+      ...EMPTY_REQUIREMENT,
+      audience: raffle.audience || "everyone",
     });
   }
 
   function createNew() {
     setNotice("");
     setSelectedId(null);
-
-    setForm({
-      raffle_name: "",
-      prize_name: "",
-      description: "",
-      start_date: "",
-      end_date: "",
-      audience: "everyone",
-      is_active: true,
-    });
+    setForm({ ...EMPTY_RAFFLE });
+    setNewRequirement({ ...EMPTY_REQUIREMENT });
   }
 
   function updateForm(field, value) {
@@ -189,6 +212,28 @@ export default function AdminRaffles() {
       ...current,
       [field]: value,
     }));
+  }
+
+  async function runRpc(name, args, successMessage = "") {
+    setSaving(true);
+    setNotice("");
+
+    try {
+      const { data, error } = await supabase.rpc(name, args);
+
+      if (error) throw error;
+
+      await loadRaffles(selectedId);
+
+      if (successMessage) setNotice(successMessage);
+      return data;
+    } catch (error) {
+      console.error(name, error);
+      setNotice(error.message || "Could not save changes.");
+      return null;
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function saveRaffle() {
@@ -205,35 +250,35 @@ export default function AdminRaffles() {
     setSaving(true);
     setNotice("");
 
-    const { data, error } = await supabase.rpc(
-      "admin_save_raffle",
-      {
-        p_raffle_id: selectedId,
-        p_raffle_name: form.raffle_name.trim(),
-        p_prize_name: form.prize_name.trim(),
-        p_description: form.description.trim(),
-        p_start_date: form.start_date || null,
-        p_end_date: form.end_date || null,
-        p_audience: form.audience,
-        p_is_active: form.is_active,
-      }
-    );
+    try {
+      const { data, error } = await supabase.rpc(
+        "admin_save_raffle",
+        {
+          p_raffle_id: selectedId,
+          p_raffle_name: form.raffle_name.trim(),
+          p_prize_name: form.prize_name.trim(),
+          p_description: form.description.trim(),
+          p_start_date: form.start_date || null,
+          p_end_date: form.end_date || null,
+          p_audience: form.audience,
+          p_is_active: form.is_active,
+        }
+      );
 
-    if (error) {
-      setNotice(error.message);
+      if (error) throw error;
+
+      await loadRaffles(data);
+      setNotice(
+        selectedId
+          ? "Raffle updated."
+          : "Raffle created. You can now add qualifiers."
+      );
+    } catch (error) {
+      console.error(error);
+      setNotice(error.message || "Could not save raffle.");
+    } finally {
       setSaving(false);
-      return;
     }
-
-    await loadRaffles(data);
-
-    setNotice(
-      selectedId
-        ? "Raffle updated."
-        : "Raffle created. Now add the qualification rules."
-    );
-
-    setSaving(false);
   }
 
   async function addRequirement() {
@@ -242,75 +287,117 @@ export default function AdminRaffles() {
       return;
     }
 
-    const { error } = await supabase.rpc(
-      "admin_save_raffle_requirement",
-      {
-        p_requirement_id: null,
-        p_raffle_id: selectedId,
-        p_audience: form.audience,
-        p_metric_type: "submits",
-        p_required_value: 0,
-      }
-    );
+    const amount = Number(newRequirement.required_value);
 
-    if (error) {
-      setNotice(error.message);
+    if (
+      newRequirement.required_value === "" ||
+      !Number.isFinite(amount) ||
+      amount < 0
+    ) {
+      setNotice("Enter a valid minimum requirement.");
       return;
     }
 
-    await loadRaffles(selectedId);
+    const duplicate = selectedRequirements.some(
+      (item) =>
+        item.audience === newRequirement.audience &&
+        item.metric_type === newRequirement.metric_type
+    );
+
+    if (duplicate) {
+      setNotice(
+        "That audience already has a requirement for this metric. Edit the existing qualifier instead."
+      );
+      return;
+    }
+
+    setAddingRequirement(true);
+    setNotice("");
+
+    try {
+      const { error } = await supabase.rpc(
+        "admin_save_raffle_requirement",
+        {
+          p_requirement_id: null,
+          p_raffle_id: selectedId,
+          p_audience: newRequirement.audience,
+          p_metric_type: newRequirement.metric_type,
+          p_required_value: amount,
+        }
+      );
+
+      if (error) throw error;
+
+      await loadRaffles(selectedId);
+      setNotice("Qualifier added successfully.");
+    } catch (error) {
+      console.error(error);
+      setNotice(error.message || "Could not add qualifier.");
+    } finally {
+      setAddingRequirement(false);
+    }
   }
 
-  async function updateRequirement(requirement, field, value) {
-    const updated = {
-      ...requirement,
-      [field]: value,
-    };
+  async function updateRequirement(rule, field, value) {
+    const updated = { ...rule, [field]: value };
 
-    const { error } = await supabase.rpc(
+    if (
+      field === "audience" ||
+      field === "metric_type"
+    ) {
+      const duplicate = selectedRequirements.some(
+        (item) =>
+          item.id !== rule.id &&
+          item.audience === updated.audience &&
+          item.metric_type === updated.metric_type
+      );
+
+      if (duplicate) {
+        setNotice(
+          "That metric already exists for this audience."
+        );
+        return;
+      }
+    }
+
+    const amount = Number(updated.required_value);
+
+    if (
+      updated.required_value === "" ||
+      !Number.isFinite(amount) ||
+      amount < 0
+    ) {
+      setNotice("Enter a valid minimum.");
+      return;
+    }
+
+    await runRpc(
       "admin_save_raffle_requirement",
       {
         p_requirement_id: updated.id,
         p_raffle_id: selectedId,
         p_audience: updated.audience,
         p_metric_type: updated.metric_type,
-        p_required_value: Number(updated.required_value || 0),
-      }
+        p_required_value: amount,
+      },
+      "Qualifier updated."
     );
-
-    if (error) {
-      setNotice(error.message);
-      return;
-    }
-
-    await loadRaffles(selectedId);
   }
 
   async function deleteRequirement(id) {
-    const { error } = await supabase.rpc(
+    if (!window.confirm("Remove this qualifier?")) return;
+
+    await runRpc(
       "admin_delete_raffle_requirement",
-      {
-        p_requirement_id: id,
-      }
+      { p_requirement_id: id },
+      "Qualifier removed."
     );
-
-    if (error) {
-      setNotice(error.message);
-      return;
-    }
-
-    await loadRaffles(selectedId);
   }
 
   async function addTicketRule() {
-    if (!selectedId) {
-      setNotice("Save the raffle first.");
-      return;
-    }
+    if (!selectedId) return;
 
-    const nextOrder = selectedTicketRules.length + 1;
-
-    const { error } = await supabase.rpc(
+    await runRpc(
       "admin_save_raffle_ticket_rule",
       {
         p_rule_id: null,
@@ -320,77 +407,66 @@ export default function AdminRaffles() {
         p_minimum_value: 0,
         p_maximum_value: null,
         p_tickets_per_unit: 1,
-        p_display_order: nextOrder,
-      }
+        p_display_order: selectedTicketRules.length + 1,
+      },
+      "Ticket range added."
     );
-
-    if (error) {
-      setNotice(error.message);
-      return;
-    }
-
-    await loadRaffles(selectedId);
   }
 
   async function updateTicketRule(rule, field, value) {
-    const updated = {
-      ...rule,
-      [field]: value,
-    };
+    const updated = { ...rule, [field]: value };
 
     const maximum =
       updated.maximum_value === "" ||
-      updated.maximum_value === null
+      updated.maximum_value == null
         ? null
         : Number(updated.maximum_value);
 
-    const { error } = await supabase.rpc(
+    const minimum = Number(updated.minimum_value);
+    const tickets = Number(updated.tickets_per_unit);
+
+    if (
+      !Number.isFinite(minimum) ||
+      minimum < 0 ||
+      (maximum !== null &&
+        (!Number.isFinite(maximum) || maximum < minimum)) ||
+      !Number.isFinite(tickets) ||
+      tickets < 0
+    ) {
+      setNotice("Check the ticket range values.");
+      return;
+    }
+
+    await runRpc(
       "admin_save_raffle_ticket_rule",
       {
         p_rule_id: updated.id,
         p_raffle_id: selectedId,
         p_audience: updated.audience,
         p_metric_type: updated.metric_type,
-        p_minimum_value: Number(updated.minimum_value || 0),
+        p_minimum_value: minimum,
         p_maximum_value: maximum,
-        p_tickets_per_unit: Number(
-          updated.tickets_per_unit || 0
-        ),
+        p_tickets_per_unit: tickets,
         p_display_order: Number(updated.display_order || 1),
-      }
+      },
+      "Ticket rule updated."
     );
-
-    if (error) {
-      setNotice(error.message);
-      return;
-    }
-
-    await loadRaffles(selectedId);
   }
 
   async function deleteTicketRule(id) {
-    const { error } = await supabase.rpc(
+    if (!window.confirm("Remove this ticket rule?")) return;
+
+    await runRpc(
       "admin_delete_raffle_ticket_rule",
-      {
-        p_rule_id: id,
-      }
+      { p_rule_id: id },
+      "Ticket rule removed."
     );
-
-    if (error) {
-      setNotice(error.message);
-      return;
-    }
-
-    await loadRaffles(selectedId);
   }
 
   async function addBonusRule() {
-    if (!selectedId) {
-      setNotice("Save the raffle first.");
-      return;
-    }
+    if (!selectedId) return;
 
-    const { error } = await supabase.rpc(
+    await runRpc(
       "admin_save_raffle_bonus_rule",
       {
         p_rule_id: null,
@@ -399,57 +475,49 @@ export default function AdminRaffles() {
         p_metric_type: "conversion",
         p_required_value: 0,
         p_multiplier: 2,
-      }
+      },
+      "Bonus multiplier added."
     );
-
-    if (error) {
-      setNotice(error.message);
-      return;
-    }
-
-    await loadRaffles(selectedId);
   }
 
   async function updateBonusRule(rule, field, value) {
-    const updated = {
-      ...rule,
-      [field]: value,
-    };
+    const updated = { ...rule, [field]: value };
 
-    const { error } = await supabase.rpc(
+    const minimum = Number(updated.required_value);
+    const multiplier = Number(updated.multiplier);
+
+    if (
+      !Number.isFinite(minimum) ||
+      minimum < 0 ||
+      !Number.isFinite(multiplier) ||
+      multiplier <= 0
+    ) {
+      setNotice("Check the bonus rule values.");
+      return;
+    }
+
+    await runRpc(
       "admin_save_raffle_bonus_rule",
       {
         p_rule_id: updated.id,
         p_raffle_id: selectedId,
         p_audience: updated.audience,
         p_metric_type: updated.metric_type,
-        p_required_value: Number(updated.required_value || 0),
-        p_multiplier: Number(updated.multiplier || 1),
-      }
+        p_required_value: minimum,
+        p_multiplier: multiplier,
+      },
+      "Bonus multiplier updated."
     );
-
-    if (error) {
-      setNotice(error.message);
-      return;
-    }
-
-    await loadRaffles(selectedId);
   }
 
   async function deleteBonusRule(id) {
-    const { error } = await supabase.rpc(
+    if (!window.confirm("Remove this bonus rule?")) return;
+
+    await runRpc(
       "admin_delete_raffle_bonus_rule",
-      {
-        p_rule_id: id,
-      }
+      { p_rule_id: id },
+      "Bonus multiplier removed."
     );
-
-    if (error) {
-      setNotice(error.message);
-      return;
-    }
-
-    await loadRaffles(selectedId);
   }
 
   if (loading) {
@@ -470,8 +538,8 @@ export default function AdminRaffles() {
           <p>RAFFLES & PRIZES</p>
           <h3>Raffle Builder</h3>
           <span>
-            Build qualification rules, ticket earning ranges and
-            bonus multipliers.
+            Configure qualification requirements, ticket
+            earning ranges and bonus multipliers.
           </span>
         </div>
 
@@ -485,14 +553,14 @@ export default function AdminRaffles() {
       </div>
 
       {notice && (
-        <div className="admin-notice">{notice}</div>
+        <div className="admin-notice" role="status">
+          {notice}
+        </div>
       )}
 
       <div className="raffle-admin-layout">
         <aside className="raffle-list-panel">
-          <span className="raffle-panel-label">
-            RAFFLES
-          </span>
+          <span className="raffle-panel-label">RAFFLES</span>
 
           {raffles.length === 0 && (
             <p className="raffle-empty">
@@ -512,11 +580,10 @@ export default function AdminRaffles() {
               onClick={() => selectRaffle(raffle)}
             >
               <strong>{raffle.raffle_name}</strong>
-
               <span>{raffle.prize_name}</span>
-
               <small>
-                {audienceLabel(raffle.audience)} •{" "}
+                {labelFor(AUDIENCES, raffle.audience)}
+                {" • "}
                 {raffle.is_active ? "Active" : "Inactive"}
               </small>
             </button>
@@ -553,10 +620,10 @@ export default function AdminRaffles() {
                 <input
                   type="text"
                   value={form.raffle_name}
+                  placeholder="AEP iPad Raffle"
                   onChange={(e) =>
                     updateForm("raffle_name", e.target.value)
                   }
-                  placeholder="AEP iPad Raffle"
                 />
               </label>
 
@@ -565,30 +632,22 @@ export default function AdminRaffles() {
                 <input
                   type="text"
                   value={form.prize_name}
+                  placeholder="Apple iPad"
                   onChange={(e) =>
                     updateForm("prize_name", e.target.value)
                   }
-                  placeholder="Apple iPad"
                 />
               </label>
 
               <label>
                 Audience
-                <select
+                <RuleSelect
+                  options={AUDIENCES}
                   value={form.audience}
-                  onChange={(e) =>
-                    updateForm("audience", e.target.value)
+                  onChange={(value) =>
+                    updateForm("audience", value)
                   }
-                >
-                  {AUDIENCES.map((audience) => (
-                    <option
-                      key={audience.value}
-                      value={audience.value}
-                    >
-                      {audience.label}
-                    </option>
-                  ))}
-                </select>
+                />
               </label>
 
               <label>
@@ -621,7 +680,7 @@ export default function AdminRaffles() {
                 onChange={(e) =>
                   updateForm("description", e.target.value)
                 }
-                placeholder="Example: All qualifiers receive food delivery credit."
+                placeholder="Describe the raffle and rewards..."
               />
             </label>
 
@@ -643,16 +702,66 @@ export default function AdminRaffles() {
                     <span>STEP 1</span>
                     <h4>Qualification Requirements</h4>
                     <p>
-                      Every requirement below must be met to
-                      qualify.
+                      Add every requirement agents must
+                      meet to qualify. There is no
+                      three-qualifier limit in this editor.
                     </p>
                   </div>
+                </div>
+
+                <div
+                  className="raffle-rule-row"
+                  style={{
+                    marginBottom: 18,
+                    padding: 14,
+                    border: "1px solid #b69a55",
+                    borderRadius: 12,
+                  }}
+                >
+                  <RuleSelect
+                    options={AUDIENCES}
+                    value={newRequirement.audience}
+                    onChange={(value) =>
+                      setNewRequirement((current) => ({
+                        ...current,
+                        audience: value,
+                      }))
+                    }
+                  />
+
+                  <RuleSelect
+                    options={METRICS}
+                    value={newRequirement.metric_type}
+                    onChange={(value) =>
+                      setNewRequirement((current) => ({
+                        ...current,
+                        metric_type: value,
+                      }))
+                    }
+                  />
+
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Minimum"
+                    value={newRequirement.required_value}
+                    onChange={(e) =>
+                      setNewRequirement((current) => ({
+                        ...current,
+                        required_value: e.target.value,
+                      }))
+                    }
+                  />
 
                   <button
                     type="button"
                     onClick={addRequirement}
+                    disabled={addingRequirement || saving}
                   >
-                    + Add Requirement
+                    {addingRequirement
+                      ? "Adding..."
+                      : "+ Add Qualifier"}
                   </button>
                 </div>
 
@@ -668,56 +777,37 @@ export default function AdminRaffles() {
                       className="raffle-rule-row"
                       key={rule.id}
                     >
-                      <select
+                      <RuleSelect
+                        options={AUDIENCES}
                         value={rule.audience}
-                        onChange={(e) =>
+                        onChange={(value) =>
                           updateRequirement(
                             rule,
                             "audience",
-                            e.target.value
+                            value
                           )
                         }
-                      >
-                        {AUDIENCES.map((audience) => (
-                          <option
-                            key={audience.value}
-                            value={audience.value}
-                          >
-                            {audience.label}
-                          </option>
-                        ))}
-                      </select>
+                      />
 
-                      <select
+                      <RuleSelect
+                        options={METRICS}
                         value={rule.metric_type}
-                        onChange={(e) =>
+                        onChange={(value) =>
                           updateRequirement(
                             rule,
                             "metric_type",
-                            e.target.value
+                            value
                           )
                         }
-                      >
-                        {METRICS.map((metric) => (
-                          <option
-                            key={metric.value}
-                            value={metric.value}
-                          >
-                            {metric.label}
-                          </option>
-                        ))}
-                      </select>
+                      />
 
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        defaultValue={rule.required_value}
-                        onBlur={(e) =>
+                      <NumberField
+                        value={rule.required_value}
+                        onSave={(value) =>
                           updateRequirement(
                             rule,
                             "required_value",
-                            e.target.value
+                            value
                           )
                         }
                       />
@@ -734,6 +824,14 @@ export default function AdminRaffles() {
                     </div>
                   ))}
                 </div>
+
+                <p className="raffle-empty">
+                  {selectedRequirements.length} qualifier
+                  {selectedRequirements.length === 1
+                    ? ""
+                    : "s"}{" "}
+                  configured.
+                </p>
               </article>
 
               <article className="raffle-builder-card">
@@ -742,13 +840,14 @@ export default function AdminRaffles() {
                     <span>STEP 2</span>
                     <h4>Ticket Earning Rules</h4>
                     <p>
-                      Set performance ranges and how many tickets
-                      each unit earns.
+                      Set performance ranges and the
+                      number of tickets earned per unit.
                     </p>
                   </div>
 
                   <button
                     type="button"
+                    disabled={saving}
                     onClick={addTicketRule}
                   >
                     + Add Ticket Range
@@ -775,85 +874,60 @@ export default function AdminRaffles() {
                     className="raffle-ticket-row"
                     key={rule.id}
                   >
-                    <select
+                    <RuleSelect
+                      options={AUDIENCES}
                       value={rule.audience}
-                      onChange={(e) =>
+                      onChange={(value) =>
                         updateTicketRule(
                           rule,
                           "audience",
-                          e.target.value
+                          value
                         )
                       }
-                    >
-                      {AUDIENCES.map((audience) => (
-                        <option
-                          key={audience.value}
-                          value={audience.value}
-                        >
-                          {audience.label}
-                        </option>
-                      ))}
-                    </select>
+                    />
 
-                    <select
+                    <RuleSelect
+                      options={METRICS}
                       value={rule.metric_type}
-                      onChange={(e) =>
+                      onChange={(value) =>
                         updateTicketRule(
                           rule,
                           "metric_type",
-                          e.target.value
+                          value
                         )
                       }
-                    >
-                      {METRICS.map((metric) => (
-                        <option
-                          key={metric.value}
-                          value={metric.value}
-                        >
-                          {metric.label}
-                        </option>
-                      ))}
-                    </select>
+                    />
 
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      defaultValue={rule.minimum_value}
-                      onBlur={(e) =>
+                    <NumberField
+                      value={rule.minimum_value}
+                      onSave={(value) =>
                         updateTicketRule(
                           rule,
                           "minimum_value",
-                          e.target.value
+                          value
                         )
                       }
                     />
 
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      defaultValue={rule.maximum_value ?? ""}
+                    <NumberField
+                      value={rule.maximum_value}
                       placeholder="No max"
-                      onBlur={(e) =>
+                      onSave={(value) =>
                         updateTicketRule(
                           rule,
                           "maximum_value",
-                          e.target.value
+                          value
                         )
                       }
                     />
 
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      defaultValue={rule.tickets_per_unit}
-                      onBlur={(e) =>
+                    <NumberField
+                      value={rule.tickets_per_unit}
+                      onSave={(value) =>
                         updateTicketRule(
                           rule,
                           "tickets_per_unit",
-                          e.target.value
+                          value
                         )
                       }
                     />
@@ -877,13 +951,13 @@ export default function AdminRaffles() {
                     <span>STEP 3</span>
                     <h4>Bonus Multipliers</h4>
                     <p>
-                      Example: 30% conversion doubles raffle
-                      tickets.
+                      Optional bonus ticket multipliers.
                     </p>
                   </div>
 
                   <button
                     type="button"
+                    disabled={saving}
                     onClick={addBonusRule}
                   >
                     + Add Multiplier
@@ -902,56 +976,37 @@ export default function AdminRaffles() {
                       className="raffle-rule-row"
                       key={rule.id}
                     >
-                      <select
+                      <RuleSelect
+                        options={AUDIENCES}
                         value={rule.audience}
-                        onChange={(e) =>
+                        onChange={(value) =>
                           updateBonusRule(
                             rule,
                             "audience",
-                            e.target.value
+                            value
                           )
                         }
-                      >
-                        {AUDIENCES.map((audience) => (
-                          <option
-                            key={audience.value}
-                            value={audience.value}
-                          >
-                            {audience.label}
-                          </option>
-                        ))}
-                      </select>
+                      />
 
-                      <select
+                      <RuleSelect
+                        options={METRICS}
                         value={rule.metric_type}
-                        onChange={(e) =>
+                        onChange={(value) =>
                           updateBonusRule(
                             rule,
                             "metric_type",
-                            e.target.value
+                            value
                           )
                         }
-                      >
-                        {METRICS.map((metric) => (
-                          <option
-                            key={metric.value}
-                            value={metric.value}
-                          >
-                            {metric.label}
-                          </option>
-                        ))}
-                      </select>
+                      />
 
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        defaultValue={rule.required_value}
-                        onBlur={(e) =>
+                      <NumberField
+                        value={rule.required_value}
+                        onSave={(value) =>
                           updateBonusRule(
                             rule,
                             "required_value",
-                            e.target.value
+                            value
                           )
                         }
                       />
@@ -988,35 +1043,31 @@ export default function AdminRaffles() {
 
               <article className="raffle-preview-card">
                 <span>RAFFLE STRUCTURE</span>
-
                 <h4>{form.raffle_name}</h4>
-
                 <strong>{form.prize_name}</strong>
 
                 <p>
-                  Audience: {audienceLabel(form.audience)}
+                  Audience:{" "}
+                  {labelFor(AUDIENCES, form.audience)}
                 </p>
 
                 <div>
-                  <b>
-                    {selectedRequirements.length}
-                  </b>{" "}
-                  qualification requirement
-                  {selectedRequirements.length === 1 ? "" : "s"}
+                  <b>{selectedRequirements.length}</b>{" "}
+                  qualification requirements
                   {" • "}
-                  <b>{selectedTicketRules.length}</b> ticket
-                  range
-                  {selectedTicketRules.length === 1 ? "" : "s"}
+                  <b>{selectedTicketRules.length}</b>{" "}
+                  ticket ranges
                   {" • "}
-                  <b>{selectedBonusRules.length}</b> bonus
-                  multiplier
-                  {selectedBonusRules.length === 1 ? "" : "s"}
+                  <b>{selectedBonusRules.length}</b>{" "}
+                  bonus multipliers
                 </div>
 
                 {selectedRequirements.map((rule) => (
                   <small key={rule.id}>
-                    {audienceLabel(rule.audience)}:{" "}
-                    {metricLabel(rule.metric_type)} ≥{" "}
+                    {labelFor(AUDIENCES, rule.audience)}
+                    {": "}
+                    {labelFor(METRICS, rule.metric_type)}
+                    {" ≥ "}
                     {rule.required_value}
                   </small>
                 ))}

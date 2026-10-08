@@ -1,0 +1,272 @@
+
+.ig-manager {
+    color: #242424;
+    width: 100%;
+    margin: 26px 0;
+  }
+  
+  .ig-heading {
+    margin-bottom: 24px;
+  }
+  
+  .ig-heading > span {
+    color: #a77b21;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 2px;
+  }
+  
+  .ig-heading h2 {
+    font-size: 28px;
+    margin: 8px 0;
+  }
+  
+  .ig-heading p,
+  .ig-panel-heading p {
+    color: #777;
+    margin: 5px 0;
+  }
+  
+  .ig-panel {
+    background: #fffdf8;
+    border: 1px solid #e8dfcd;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  
+  .ig-panel-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+  
+  .ig-panel-heading h3 {
+    margin: 0;
+    font-size: 20px;
+  }
+  
+  .ig-label {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #776334;
+    letter-spacing: 1px;
+  }
+  
+  .ig-label select {
+    max-width: 480px;
+  }
+  
+  .ig-manager input,
+  .ig-manager select {
+    padding: 12px 14px;
+    background: white;
+    color: #222;
+    border: 1px solid #d9d2c3;
+    border-radius: 9px;
+    font-size: 14px;
+  }
+  
+  .ig-manager button {
+    border: none;
+    border-radius: 9px;
+    padding: 11px 15px;
+    font-weight: 750;
+    cursor: pointer;
+  }
+  
+  .ig-manager button:disabled {
+    opacity: .5;
+    cursor: wait;
+  }
+  
+  .ig-group-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  
+  .ig-group-tabs button {
+    background: #f3ede0;
+    color: #292929;
+    min-width: 130px;
+    text-align: left;
+    border: 1px solid #e1d5bb;
+  }
+  
+  .ig-group-tabs button.ig-selected {
+    background: #191919;
+    color: #eac46e;
+    border-color: #191919;
+  }
+  
+  .ig-group-tabs small {
+    display: block;
+    font-size: 11px;
+    margin-top: 6px;
+    opacity: .7;
+  }
+  
+  .ig-inline-form {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .ig-inline-form input {
+    flex: 1;
+    min-width: 200px;
+  }
+  
+  .ig-inline-form button,
+  .ig-tier-form button[type="submit"] {
+    background: #191919;
+    color: #edc66d;
+  }
+  
+  .ig-group-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  
+  .ig-group-actions button,
+  .ig-row-actions button {
+    background: #f1e6cf;
+    color: #4b3814;
+  }
+  
+  .ig-manager button.ig-danger,
+  .ig-manager button.ig-remove {
+    background: #f9e7e5;
+    color: #8c2828;
+  }
+  
+  .ig-tier-list {
+    margin-bottom: 24px;
+  }
+  
+  .ig-tier-row,
+  .ig-agent-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 15px 0;
+    border-bottom: 1px solid #ebe5d9;
+  }
+  
+  .ig-tier-row > div:first-child,
+  .ig-agent-row > div:first-child {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1;
+  }
+  
+  .ig-tier-row span,
+  .ig-agent-row span {
+    font-size: 12px;
+    color: #777;
+  }
+  
+  .ig-amount {
+    font-size: 20px;
+    color: #98701e;
+  }
+  
+  .ig-row-actions {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .ig-tier-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .ig-tier-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 800;
+    flex: 1;
+    min-width: 145px;
+  }
+  
+  .ig-tier-form button {
+    min-height: 44px;
+  }
+  
+  .ig-manager button.ig-secondary {
+    background: #e9e5dc;
+    color: #333;
+  }
+  
+  .ig-count {
+    padding: 9px 13px;
+    background: #f1e6cf;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  
+  .ig-search {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  
+  .ig-agent-list {
+    max-height: 420px;
+    overflow-y: auto;
+  }
+  
+  .ig-manager button.ig-assign {
+    background: #191919;
+    color: #edc66d;
+  }
+  
+  .ig-message,
+  .ig-legacy {
+    padding: 16px 20px;
+    background: #fff4d9;
+    border: 1px solid #e4cf99;
+    border-radius: 11px;
+    margin-bottom: 20px;
+    color: #5c4513;
+  }
+  
+  .ig-legacy p {
+    margin-bottom: 0;
+    font-size: 13px;
+  }
+  
+  .ig-loading {
+    padding: 25px;
+  }
+  
+  @media (max-width: 650px) {
+    .ig-panel {
+      padding: 17px;
+    }
+  
+    .ig-tier-row,
+    .ig-agent-row {
+      flex-wrap: wrap;
+    }
+  
+    .ig-heading h2 {
+      font-size: 23px;
+    }
+  }
+  

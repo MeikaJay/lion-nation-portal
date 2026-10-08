@@ -1,35 +1,67 @@
+
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabase";
+import {
+  incentiveStatus,
+  raffleStatus,
+  metricLabel,
+} from "./aepTracking";
 import "./PortalHome.css";
+
+const DISCLAIMER =
+  "Performance information shown in the Lion Nation Portal is provided for motivational and tracking purposes only. Results displayed here are unofficial. Final submit counts, incentive eligibility, earnings, raffle qualification and payouts are subject to verification through official company reporting and Finance.";
+
+const money = (value) =>
+  Number(value || 0).toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 2,
+  });
+
+const number = (value) =>
+  Number(value || 0).toLocaleString("en-US");
+
+function displayMetric(metric, value) {
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+
+  const formatted = number(value);
+
+  if (metric === "productivity" || metric === "conversion") {
+    return `${formatted}%`;
+  }
+
+  return formatted;
+}
 
 export default function PortalHome() {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
   const [person, setPerson] = useState(null);
-  const [teamName, setTeamName] = useState("");
+  const [teamName, setTeamName] = useState("Lion Nation");
   const [leaderboard, setLeaderboard] = useState([]);
+
   const [incentives, setIncentives] = useState([]);
   const [incentiveTiers, setIncentiveTiers] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const [memberships, setMemberships] = useState([]);
+  const [groupsLoaded, setGroupsLoaded] = useState(false);
+
   const [raffles, setRaffles] = useState([]);
   const [raffleRequirements, setRaffleRequirements] = useState([]);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [raffleImages, setRaffleImages] = useState({});
 
-  const [showSuggestionForm, setShowSuggestionForm] =
-    useState(false);
-  const [suggestionSubject, setSuggestionSubject] =
-    useState("");
-  const [suggestionText, setSuggestionText] =
-    useState("");
-  const [isAnonymous, setIsAnonymous] =
-    useState(false);
-  const [suggestionSubmitting, setSuggestionSubmitting] =
-    useState(false);
-  const [suggestionSuccess, setSuggestionSuccess] =
-    useState("");
-  const [suggestionError, setSuggestionError] =
-    useState("");
+  const [showSuggestionForm, setShowSuggestionForm] = useState(false);
+  const [suggestionSubject, setSuggestionSubject] = useState("");
+  const [suggestionText, setSuggestionText] = useState("");
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [suggestionSubmitting, setSuggestionSubmitting] = useState(false);
+  const [suggestionSuccess, setSuggestionSuccess] = useState("");
+  const [suggestionError, setSuggestionError] = useState("");
 
   useEffect(() => {
     loadDashboard();
@@ -50,26 +82,29 @@ export default function PortalHome() {
         return;
       }
 
-      const { data: profile, error: profileError } =
-        await supabase
-          .from("aep_people")
-          .select(`
-            id,
-            first_name,
-            last_name,
-            username,
-            role,
-            aep_target,
-            team_id,
-            is_active,
-            current_submits,
-            current_csr_transfers,
-            current_productivity,
-            current_enrollment_links
-          `)
-          .eq("auth_user_id", user.id)
-          .eq("is_active", true)
-          .maybeSingle();
+      const { data: profile, error: profileError } = await supabase
+        .from("aep_people")
+        .select(`
+          id,
+          first_name,
+          last_name,
+          username,
+          role,
+          aep_target,
+          team_id,
+          is_active,
+          incentive_category,
+          raffle_role,
+          current_submits,
+          current_csr_transfers,
+          current_productivity,
+          current_enrollment_links,
+          current_talk_time,
+          current_conversion
+        `)
+        .eq("auth_user_id", user.id)
+        .eq("is_active", true)
+        .maybeSingle();
 
       if (profileError) throw profileError;
 
@@ -102,6 +137,8 @@ export default function PortalHome() {
         leaderboardResult,
         incentiveResult,
         tierResult,
+        groupResult,
+        membershipResult,
         raffleResult,
         requirementResult,
       ] = await Promise.all([
@@ -111,10 +148,7 @@ export default function PortalHome() {
               .select("team_name")
               .eq("id", profile.team_id)
               .maybeSingle()
-          : Promise.resolve({
-              data: null,
-              error: null,
-            }),
+          : Promise.resolve({ data: null, error: null }),
 
         supabase.rpc("get_aep_agent_leaderboard"),
 
@@ -130,6 +164,15 @@ export default function PortalHome() {
           .order("display_order"),
 
         supabase
+          .from("aep_incentive_groups")
+          .select("*"),
+
+        supabase
+          .from("aep_incentive_group_members")
+          .select("*")
+          .eq("agent_id", profile.id),
+
+        supabase
           .from("aep_raffles")
           .select("*")
           .eq("is_active", true)
@@ -140,66 +183,65 @@ export default function PortalHome() {
           .select("*"),
       ]);
 
-      if (teamResult.error) {
-        console.error("Team error:", teamResult.error);
-      }
-
-      setTeamName(
-        teamResult.data?.team_name || "Lion Nation"
-      );
+      setTeamName(teamResult.data?.team_name || "Lion Nation");
 
       if (leaderboardResult.error) {
-        console.error(
-          "Leaderboard error:",
-          leaderboardResult.error
-        );
-        setLeaderboard([]);
-      } else {
-        setLeaderboard(
-          leaderboardResult.data || []
-        );
+        console.error("Leaderboard error:", leaderboardResult.error);
       }
+      setLeaderboard(leaderboardResult.data || []);
 
       if (incentiveResult.error) {
-        console.error(
-          "Incentive error:",
-          incentiveResult.error
-        );
+        console.error("Incentive error:", incentiveResult.error);
       }
+      setIncentives(incentiveResult.data || []);
 
       if (tierResult.error) {
+        console.error("Tier error:", tierResult.error);
+      }
+      setIncentiveTiers(tierResult.data || []);
+
+      if (groupResult.error || membershipResult.error) {
         console.error(
-          "Incentive tier error:",
-          tierResult.error
+          "Incentive group error:",
+          groupResult.error || membershipResult.error
         );
       }
+
+      setGroups(groupResult.data || []);
+      setMemberships(membershipResult.data || []);
+      setGroupsLoaded(
+        !groupResult.error && !membershipResult.error
+      );
 
       if (raffleResult.error) {
-        console.error(
-          "Raffle error:",
-          raffleResult.error
-        );
+        console.error("Raffle error:", raffleResult.error);
       }
+      setRaffles(raffleResult.data || []);
 
       if (requirementResult.error) {
-        console.error(
-          "Raffle requirement error:",
-          requirementResult.error
-        );
+        console.error("Requirements error:", requirementResult.error);
       }
+      setRaffleRequirements(requirementResult.data || []);
 
-      setIncentives(incentiveResult.data || []);
-      setIncentiveTiers(tierResult.data || []);
-      setRaffles(raffleResult.data || []);
-      setRaffleRequirements(
-        requirementResult.data || []
+      const imageEntries = await Promise.all(
+        (raffleResult.data || [])
+          .filter((raffle) => raffle.image_path)
+          .map(async (raffle) => {
+            const { data, error } = await supabase.storage
+              .from("aep-raffle-images")
+              .createSignedUrl(raffle.image_path, 3600);
+
+            if (error) {
+              console.error("Raffle image error:", error);
+            }
+
+            return [raffle.id, data?.signedUrl || null];
+          })
       );
+
+      setRaffleImages(Object.fromEntries(imageEntries));
     } catch (error) {
-      console.error(
-        "Dashboard load error:",
-        error
-      );
-
+      console.error("Dashboard load error:", error);
       setErrorMessage(
         "We couldn't load your AEP dashboard right now."
       );
@@ -208,185 +250,67 @@ export default function PortalHome() {
     }
   }
 
-  const target = Number(
-    person?.aep_target || 0
-  );
-
-  const submits = Number(
-    person?.current_submits || 0
-  );
-
-  const csrTransfers = Number(
-    person?.current_csr_transfers || 0
-  );
-
-  const productivity =
-    person?.current_productivity === null ||
-    person?.current_productivity === undefined
-      ? null
-      : Number(person.current_productivity);
-
-  const enrollmentLinks = Number(
-    person?.current_enrollment_links || 0
-  );
-
-  const remaining = Math.max(
-    target - submits,
-    0
-  );
-
+  const target = Number(person?.aep_target || 0);
+  const submits = Number(person?.current_submits || 0);
+  const remaining = Math.max(target - submits, 0);
   const progressPercent =
-    target > 0
-      ? Math.round(
-          (submits / target) * 100
-        )
-      : 0;
+    target > 0 ? Math.round((submits / target) * 100) : 0;
 
-  const progressBarPercent = Math.min(
-    progressPercent,
-    100
+  const progressBarPercent = Math.max(
+    0,
+    Math.min(progressPercent, 100)
   );
 
-  const activeIncentiveData = useMemo(() => {
-    return incentives.map((incentive) => {
-      const tiers = incentiveTiers
+  const activeIncentiveData = useMemo(
+    () =>
+      incentives
         .filter(
-          (tier) =>
-            tier.incentive_id === incentive.id
+          (incentive) =>
+            !incentive.incentive_category ||
+            incentive.incentive_category ===
+              person?.incentive_category
         )
-        .sort(
-          (a, b) =>
-            Number(a.required_submits) -
-            Number(b.required_submits)
-        );
+        .map((incentive) => ({
+          ...incentive,
+          status: incentiveStatus(
+            person || {},
+            incentive,
+            incentiveTiers,
+            groups,
+            memberships,
+            groupsLoaded
+          ),
+        })),
+    [
+      incentives,
+      incentiveTiers,
+      groups,
+      memberships,
+      groupsLoaded,
+      person,
+    ]
+  );
 
-      const earnedTier = [...tiers]
-        .reverse()
-        .find(
-          (tier) =>
-            submits >=
-            Number(tier.required_submits)
-        );
+  const raffleData = useMemo(
+    () =>
+      raffles
+        .map((raffle) => ({
+          ...raffle,
+          status: raffleStatus(
+            person || {},
+            raffle,
+            raffleRequirements
+          ),
+        }))
+        .filter((raffle) => raffle.status.eligible),
+    [raffles, raffleRequirements, person]
+  );
 
-      const nextTier = tiers.find(
-        (tier) =>
-          submits <
-          Number(tier.required_submits)
-      );
-
-      return {
-        ...incentive,
-        tiers,
-        earnedTier,
-        nextTier,
-        earnedAmount: earnedTier
-          ? Number(
-              earnedTier.earned_amount || 0
-            )
-          : 0,
-        submitsToNextTier: nextTier
-          ? Math.max(
-              Number(
-                nextTier.required_submits
-              ) - submits,
-              0
-            )
-          : 0,
-      };
-    });
-  }, [
-    incentives,
-    incentiveTiers,
-    submits,
-  ]);
-
-  const raffleData = useMemo(() => {
-    return raffles.map((raffle) => {
-      const requirements =
-        raffleRequirements
-          .filter(
-            (requirement) =>
-              requirement.raffle_id ===
-              raffle.id
-          )
-          .map((requirement) => {
-            let actual = 0;
-
-            if (
-              requirement.metric_type ===
-              "submits"
-            ) {
-              actual = submits;
-            }
-
-            if (
-              requirement.metric_type ===
-              "csr_transfers"
-            ) {
-              actual = csrTransfers;
-            }
-
-            if (
-              requirement.metric_type ===
-              "productivity"
-            ) {
-              actual = productivity;
-            }
-
-            if (
-              requirement.metric_type ===
-              "enrollment_links"
-            ) {
-              actual = enrollmentLinks;
-            }
-
-            const required = Number(
-              requirement.required_value || 0
-            );
-
-            const met =
-              actual !== null &&
-              Number(actual) >= required;
-
-            return {
-              ...requirement,
-              actual,
-              required,
-              met,
-            };
-          });
-
-      const metCount =
-        requirements.filter(
-          (requirement) =>
-            requirement.met
-        ).length;
-
-      return {
-        ...raffle,
-        requirements,
-        metCount,
-        qualified:
-          requirements.length > 0 &&
-          metCount === requirements.length,
-      };
-    });
-  }, [
-    raffles,
-    raffleRequirements,
-    submits,
-    csrTransfers,
-    productivity,
-    enrollmentLinks,
-  ]);
-
-  const topAgents =
-    leaderboard.slice(0, 5);
+  const topAgents = leaderboard.slice(0, 5);
 
   const myRank =
     leaderboard.findIndex(
-      (agent) =>
-        agent.agent_id === person?.id
+      (agent) => agent.agent_id === person?.id
     ) + 1;
 
   function openSuggestionBox() {
@@ -400,26 +324,21 @@ export default function PortalHome() {
     setSuggestionSubject("");
     setSuggestionText("");
     setIsAnonymous(false);
-    setSuggestionError("");
     setSuggestionSuccess("");
+    setSuggestionError("");
   }
 
-  async function handleSuggestionSubmit(e) {
-    e.preventDefault();
+  async function handleSuggestionSubmit(event) {
+    event.preventDefault();
+
+    const subject = suggestionSubject.trim();
+    const suggestion = suggestionText.trim();
 
     setSuggestionError("");
     setSuggestionSuccess("");
 
-    const cleanSubject =
-      suggestionSubject.trim();
-
-    const cleanSuggestion =
-      suggestionText.trim();
-
-    if (!cleanSuggestion) {
-      setSuggestionError(
-        "Please enter your suggestion before submitting."
-      );
+    if (!suggestion) {
+      setSuggestionError("Please enter your suggestion.");
       return;
     }
 
@@ -437,8 +356,8 @@ export default function PortalHome() {
         .from("aep_suggestions")
         .insert({
           submitted_by: person.id,
-          subject: cleanSubject || null,
-          suggestion_text: cleanSuggestion,
+          subject: subject || null,
+          suggestion_text: suggestion,
           is_anonymous: isAnonymous,
           status: "new",
         });
@@ -448,16 +367,11 @@ export default function PortalHome() {
       setSuggestionSubject("");
       setSuggestionText("");
       setIsAnonymous(false);
-
       setSuggestionSuccess(
         "Thank you! Your suggestion has been submitted."
       );
     } catch (error) {
-      console.error(
-        "Suggestion submission error:",
-        error
-      );
-
+      console.error("Suggestion error:", error);
       setSuggestionError(
         "We couldn't submit your suggestion. Please try again."
       );
@@ -474,14 +388,8 @@ export default function PortalHome() {
   if (loading) {
     return (
       <div className="portal-loading">
-        <img
-          src="/Lion Nation.png"
-          alt="Lion Nation"
-        />
-
-        <p>
-          Loading your AEP dashboard...
-        </p>
+        <img src="/Lion Nation.png" alt="Lion Nation" />
+        <p>Loading your AEP dashboard...</p>
       </div>
     );
   }
@@ -489,17 +397,9 @@ export default function PortalHome() {
   if (errorMessage) {
     return (
       <div className="portal-loading">
-        <img
-          src="/Lion Nation.png"
-          alt="Lion Nation"
-        />
-
+        <img src="/Lion Nation.png" alt="Lion Nation" />
         <p>{errorMessage}</p>
-
-        <button
-          type="button"
-          onClick={loadDashboard}
-        >
+        <button type="button" onClick={loadDashboard}>
           Try Again
         </button>
       </div>
@@ -515,15 +415,9 @@ export default function PortalHome() {
             alt="Lion Nation"
             className="portal-logo"
           />
-
           <div>
-            <p className="portal-eyebrow">
-              LION NATION
-            </p>
-
-            <h1>
-              AEP Performance Portal
-            </h1>
+            <p className="portal-eyebrow">LION NATION</p>
+            <h1>AEP Performance Portal</h1>
           </div>
         </div>
 
@@ -542,75 +436,40 @@ export default function PortalHome() {
             <p className="welcome-label">
               YOUR AEP COMMAND CENTER
             </p>
-
-            <h2>
-              Welcome,{" "}
-              {person?.first_name}.
-            </h2>
-
-            <p className="welcome-team">
-              {teamName}
-            </p>
+            <h2>Welcome, {person?.first_name}.</h2>
+            <p className="welcome-team">{teamName}</p>
           </div>
 
           <div className="welcome-message">
             <span>BE BOLD.</span>
-            <span>
-              STAY CONFIDENT.
-            </span>
-            <strong>
-              BE A LION.
-            </strong>
+            <span>STAY CONFIDENT.</span>
+            <strong>BE A LION.</strong>
           </div>
         </section>
 
         <section className="performance-grid">
           <article className="performance-card">
             <p>AEP TARGET</p>
-
-            <strong>
-              {target.toLocaleString()}
-            </strong>
-
-            <span>
-              Your individual AEP goal
-            </span>
+            <strong>{number(target)}</strong>
+            <span>Your individual AEP goal</span>
           </article>
 
           <article className="performance-card">
             <p>ACTUAL SUBMITS</p>
-
-            <strong>
-              {submits.toLocaleString()}
-            </strong>
-
-            <span>
-              Current cumulative submits
-            </span>
+            <strong>{number(submits)}</strong>
+            <span>Current cumulative submits</span>
           </article>
 
           <article className="performance-card">
             <p>PROGRESS</p>
-
-            <strong>
-              {progressPercent}%
-            </strong>
-
-            <span>
-              Of your AEP target
-            </span>
+            <strong>{progressPercent}%</strong>
+            <span>Of your AEP target</span>
           </article>
 
           <article className="performance-card">
             <p>REMAINING</p>
-
-            <strong>
-              {remaining.toLocaleString()}
-            </strong>
-
-            <span>
-              Submits to reach target
-            </span>
+            <strong>{number(remaining)}</strong>
+            <span>Submits to reach target</span>
           </article>
         </section>
 
@@ -620,11 +479,7 @@ export default function PortalHome() {
               <p className="section-eyebrow">
                 YOUR AEP JOURNEY
               </p>
-
-              <h3>
-                Road to{" "}
-                {target.toLocaleString()}
-              </h3>
+              <h3>Road to {number(target)}</h3>
             </div>
 
             <div className="progress-number">
@@ -635,32 +490,19 @@ export default function PortalHome() {
           <div className="main-progress-track">
             <div
               className="main-progress-fill"
-              style={{
-                width: `${progressBarPercent}%`,
-              }}
+              style={{ width: `${progressBarPercent}%` }}
             />
           </div>
 
           <div className="progress-details">
             <span>
-              <strong>
-                {submits.toLocaleString()}
-              </strong>{" "}
-              submits
+              <strong>{number(submits)}</strong> submits
             </span>
-
             <span>
-              <strong>
-                {remaining.toLocaleString()}
-              </strong>{" "}
-              to go
+              <strong>{number(remaining)}</strong> to go
             </span>
-
             <span>
-              Goal:{" "}
-              <strong>
-                {target.toLocaleString()}
-              </strong>
+              Goal: <strong>{number(target)}</strong>
             </span>
           </div>
         </section>
@@ -670,37 +512,24 @@ export default function PortalHome() {
             <div className="section-heading">
               <div>
                 <p className="section-eyebrow">
-                  AEP INCENTIVE
+                  AEP INCENTIVES
                 </p>
-
-                <h3>
-                  Your Incentive Progress
-                </h3>
+                <h3>Your Incentive Progress</h3>
               </div>
             </div>
 
             {activeIncentiveData.length === 0 ? (
-              <>
-                <div className="incentive-earned">
-                  <span>
-                    Current Earned Amount
-                  </span>
-
-                  <strong>$0</strong>
-                </div>
-
-                <div className="coming-soon-box">
-                  <p>
-                    Incentive tiers and your
-                    progress will appear here
-                    once the current incentive
-                    is published.
-                  </p>
-                </div>
-              </>
+              <div className="coming-soon-box">
+                <p>
+                  Your incentive information will appear
+                  here when Admin publishes it.
+                </p>
+              </div>
             ) : (
-              activeIncentiveData.map(
-                (incentive) => (
+              activeIncentiveData.map((incentive) => {
+                const status = incentive.status;
+
+                return (
                   <div
                     className="agent-incentive-block"
                     key={incentive.id}
@@ -709,124 +538,108 @@ export default function PortalHome() {
                       <strong>
                         {incentive.incentive_name}
                       </strong>
-
                       {incentive.description && (
-                        <span>
-                          {incentive.description}
-                        </span>
+                        <span>{incentive.description}</span>
                       )}
                     </div>
 
-                    <div className="incentive-earned">
-                      <span>
-                        Current Earned Amount
-                      </span>
+                    {!status.ready ? (
+                      <div className="coming-soon-box">
+                        <p>{status.reason}</p>
+                        <p>
+                          Contact your leader if your
+                          incentive group needs updating.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <p>
+                          Incentive Group:{" "}
+                          <strong>{status.group}</strong>
+                        </p>
 
-                      <strong>
-                        $
-                        {incentive.earnedAmount.toLocaleString()}
-                      </strong>
-                    </div>
-
-                    <div className="incentive-next">
-                      {incentive.nextTier ? (
-                        <>
+                        <div className="incentive-earned">
                           <span>
-                            NEXT TIER
+                            Estimated Tier Amount
                           </span>
-
                           <strong>
-                            $
-                            {Number(
-                              incentive.nextTier
-                                .earned_amount || 0
-                            ).toLocaleString()}
+                            {money(status.amount)}
                           </strong>
+                        </div>
 
-                          <p>
-                            At{" "}
-                            {
-                              incentive.nextTier
-                                .required_submits
-                            }{" "}
-                            submits
-                          </p>
+                        <div className="incentive-next">
+                          {status.next ? (
+                            <>
+                              <span>NEXT TIER</span>
+                              <strong>
+                                {money(
+                                  status.next.earned_amount
+                                )}
+                              </strong>
+                              <p>
+                                {status.next.tier_name} at{" "}
+                                {number(
+                                  status.next.required_submits
+                                )}{" "}
+                                submits
+                              </p>
+                              <b>
+                                {number(status.needed)} more
+                                to go
+                              </b>
+                            </>
+                          ) : (
+                            <>
+                              <span>STATUS</span>
+                              <strong>
+                                ALL TIERS REACHED
+                              </strong>
+                              <p>Keep building.</p>
+                            </>
+                          )}
+                        </div>
 
-                          <b>
-                            {
-                              incentive.submitsToNextTier
-                            }{" "}
-                            more to go
-                          </b>
-                        </>
-                      ) : (
-                        <>
-                          <span>
-                            STATUS
-                          </span>
-
-                          <strong>
-                            ALL TIERS REACHED
-                          </strong>
-
-                          <p>
-                            Keep building.
-                          </p>
-                        </>
-                      )}
-                    </div>
-
-                    {incentive.tiers.length > 0 && (
-                      <div className="tier-road">
-                        {incentive.tiers.map(
-                          (tier) => {
+                        <div className="tier-road">
+                          {status.tiers.map((tier) => {
                             const reached =
                               submits >=
-                              Number(
-                                tier.required_submits
-                              );
+                              Number(tier.required_submits);
 
                             return (
                               <div
+                                key={tier.id}
                                 className={
                                   reached
                                     ? "tier-step tier-reached"
                                     : "tier-step"
                                 }
-                                key={tier.id}
                               >
                                 <b>
                                   {reached
                                     ? "✓"
                                     : tier.required_submits}
                                 </b>
-
-                                <span>
-                                  {tier.tier_name}
-                                </span>
-
+                                <span>{tier.tier_name}</span>
                                 <small>
-                                  $
-                                  {Number(
-                                    tier.earned_amount ||
-                                      0
-                                  ).toLocaleString()}
+                                  {money(
+                                    tier.earned_amount
+                                  )}
                                 </small>
                               </div>
                             );
-                          }
-                        )}
-                      </div>
+                          })}
+                        </div>
+                      </>
                     )}
                   </div>
-                )
-              )
+                );
+              })
             )}
 
             <p className="card-disclaimer">
-              Incentive progress shown here is
-              unofficial and subject to final
-              verification through official
+              Incentive progress and estimated amounts
+              are unofficial. Final eligibility and
+              payouts are determined through official
               company reporting and Finance.
             </p>
           </article>
@@ -837,119 +650,127 @@ export default function PortalHome() {
                 <p className="section-eyebrow">
                   ACTIVE RAFFLES
                 </p>
-
-                <h3>
-                  Your Raffle Progress
-                </h3>
+                <h3>Your Raffle Progress</h3>
               </div>
             </div>
 
             {raffleData.length === 0 ? (
               <div className="raffle-empty">
-                <div className="raffle-icon">
-                  ★
-                </div>
-
-                <h4>
-                  No Active Raffle Yet
-                </h4>
-
+                <div className="raffle-icon">★</div>
+                <h4>No Active Raffle Yet</h4>
                 <p>
-                  Active prizes,
-                  qualification requirements
-                  and your progress will appear
-                  here.
+                  Your eligible raffles will appear here.
                 </p>
               </div>
             ) : (
               <div className="agent-raffle-list">
-                {raffleData.map((raffle) => (
-                  <div
-                    className="agent-raffle"
-                    key={raffle.id}
-                  >
-                    <div className="agent-raffle-header">
-                      <div>
-                        <span>PRIZE</span>
+                {raffleData.map((raffle) => {
+                  const status = raffle.status;
 
-                        <h4>
-                          {raffle.prize_name}
-                        </h4>
+                  return (
+                    <div
+                      className="agent-raffle"
+                      key={raffle.id}
+                    >
+                      {raffleImages[raffle.id] && (
+                        <img
+                          src={raffleImages[raffle.id]}
+                          alt={raffle.prize_name}
+                          style={{
+                            width: "100%",
+                            maxHeight: 220,
+                            objectFit: "contain",
+                            borderRadius: 12,
+                            marginBottom: 16,
+                          }}
+                        />
+                      )}
 
-                        <p>
-                          {raffle.raffle_name}
-                        </p>
+                      <div className="agent-raffle-header">
+                        <div>
+                          <span>PRIZE</span>
+                          <h4>{raffle.prize_name}</h4>
+                          <p>{raffle.raffle_name}</p>
+                        </div>
+
+                        <b
+                          className={
+                            status.qualified
+                              ? "agent-qualified"
+                              : "agent-in-progress"
+                          }
+                        >
+                          {status.qualified
+                            ? "ALL REQUIREMENTS MET*"
+                            : `${status.metCount} OF ${
+                                status.details.length
+                              }`}
+                        </b>
                       </div>
 
-                      <b
-                        className={
-                          raffle.qualified
-                            ? "agent-qualified"
-                            : "agent-in-progress"
-                        }
-                      >
-                        {raffle.qualified
-                          ? "QUALIFIED"
-                          : `${raffle.metCount} OF ${raffle.requirements.length}`}
-                      </b>
-                    </div>
+                      {raffle.description && (
+                        <p className="raffle-description">
+                          {raffle.description}
+                        </p>
+                      )}
 
-                    {raffle.description && (
-                      <p className="raffle-description">
-                        {raffle.description}
-                      </p>
-                    )}
-
-                    <div className="agent-requirements">
-                      {raffle.requirements.map(
-                        (requirement) => (
-                          <div
-                            className={
-                              requirement.met
-                                ? "agent-requirement requirement-complete"
-                                : "agent-requirement"
-                            }
-                            key={requirement.id}
-                          >
-                            <div>
-                              <span>
-                                {formatMetric(
-                                  requirement.metric_type
-                                )}
-                              </span>
-
-                              <strong>
-                                {formatActual(
-                                  requirement.metric_type,
-                                  requirement.actual
-                                )}
-                                {" / "}
-                                {formatRequired(
-                                  requirement.metric_type,
-                                  requirement.required
-                                )}
-                              </strong>
-                            </div>
-
-                            <b>
-                              {requirement.met
-                                ? "✓"
-                                : "•"}
-                            </b>
-                          </div>
-                        )
+                      {status.details.length === 0 ? (
+                        <p>
+                          Qualification requirements
+                          haven't been configured yet.
+                        </p>
+                      ) : (
+                        <div className="agent-requirements">
+                          {status.details.map(
+                            (requirement) => (
+                              <div
+                                key={requirement.id}
+                                className={
+                                  requirement.met
+                                    ? "agent-requirement requirement-complete"
+                                    : "agent-requirement"
+                                }
+                              >
+                                <div>
+                                  <span>
+                                    {metricLabel(
+                                      requirement.metric_type
+                                    )}
+                                  </span>
+                                  <strong>
+                                    {displayMetric(
+                                      requirement.metric_type,
+                                      requirement.actual
+                                    )}
+                                    {" / "}
+                                    {displayMetric(
+                                      requirement.metric_type,
+                                      requirement.required_value
+                                    )}
+                                  </strong>
+                                </div>
+                                <b>
+                                  {requirement.met
+                                    ? "✓"
+                                    : "•"}
+                                </b>
+                              </div>
+                            )
+                          )}
+                        </div>
                       )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
             <p className="card-disclaimer">
-              Unofficial progress only. Please
-              consult your leader for the most
-              accurate and updated raffle
-              qualification status.
+              *Unofficial progress only. Raffle
+              qualification and ticket eligibility
+              require verification through official
+              company reporting. Please consult your
+              leader for the latest status.
             </p>
           </article>
         </section>
@@ -961,10 +782,7 @@ export default function PortalHome() {
                 <p className="section-eyebrow">
                   LION NATION
                 </p>
-
-                <h3>
-                  AEP Leaderboard
-                </h3>
+                <h3>AEP Leaderboard</h3>
               </div>
 
               {myRank > 0 && (
@@ -977,85 +795,68 @@ export default function PortalHome() {
             <div className="leaderboard-list">
               {topAgents.length === 0 ? (
                 <div className="leaderboard-empty">
-                  Leaderboard data will appear
-                  here.
+                  Leaderboard data will appear here.
                 </div>
               ) : (
-                topAgents.map(
-                  (agent, index) => {
-                    const isMe =
-                      agent.agent_id ===
-                      person?.id;
+                topAgents.map((agent, index) => {
+                  const isMe =
+                    agent.agent_id === person?.id;
 
-                    return (
-                      <div
-                        className={`leaderboard-row ${
-                          isMe
-                            ? "leaderboard-me"
-                            : ""
-                        }`}
-                        key={agent.agent_id}
-                      >
-                        <div className="leaderboard-position">
-                          {index + 1}
-                        </div>
-
-                        <div className="leaderboard-person">
-                          <strong>
-                            {agent.agent_name}
-
-                            {isMe && (
-                              <span className="you-label">
-                                YOU
-                              </span>
-                            )}
-                          </strong>
-
-                          <span>
-                            {agent.team_name ||
-                              "Lion Nation"}
-                          </span>
-                        </div>
-
-                        <div className="leaderboard-stats">
-                          <strong>
-                            {Number(
-                              agent.total_submits ||
-                                0
-                            ).toLocaleString()}
-                          </strong>
-
-                          <span>
-                            {Number(
-                              agent.progress_percent ||
-                                0
-                            ).toFixed(1)}
-                            %
-                          </span>
-                        </div>
+                  return (
+                    <div
+                      key={agent.agent_id}
+                      className={`leaderboard-row ${
+                        isMe ? "leaderboard-me" : ""
+                      }`}
+                    >
+                      <div className="leaderboard-position">
+                        {index + 1}
                       </div>
-                    );
-                  }
-                )
+
+                      <div className="leaderboard-person">
+                        <strong>
+                          {agent.agent_name}
+                          {isMe && (
+                            <span className="you-label">
+                              YOU
+                            </span>
+                          )}
+                        </strong>
+                        <span>
+                          {agent.team_name ||
+                            "Lion Nation"}
+                        </span>
+                      </div>
+
+                      <div className="leaderboard-stats">
+                        <strong>
+                          {number(
+                            agent.total_submits
+                          )}
+                        </strong>
+                        <span>
+                          {Number(
+                            agent.progress_percent || 0
+                          ).toFixed(1)}
+                          %
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
 
             {myRank > 5 && (
               <div className="leaderboard-personal-rank">
-                <span>
-                  Your current position
-                </span>
-
-                <strong>
-                  #{myRank}
-                </strong>
+                <span>Your current position</span>
+                <strong>#{myRank}</strong>
               </div>
             )}
 
             <p className="card-disclaimer">
-              Rankings are based on percentage
-              toward individual AEP target using
-              unofficial portal performance data.
+              Rankings use percentage toward individual
+              AEP goals and unofficial performance data.
             </p>
           </article>
 
@@ -1065,10 +866,7 @@ export default function PortalHome() {
                 <p className="section-eyebrow">
                   YOUR VOICE MATTERS
                 </p>
-
-                <h3>
-                  Suggestion Box
-                </h3>
+                <h3>Suggestion Box</h3>
               </div>
             </div>
 
@@ -1077,11 +875,9 @@ export default function PortalHome() {
                 <strong>
                   Help make Lion Nation better.
                 </strong>
-
                 <p>
-                  Have an idea, suggestion or
-                  feedback? Share it directly
-                  with Lion Nation leadership.
+                  Have an idea, suggestion or feedback?
+                  Share it with Lion Nation leadership.
                 </p>
 
                 <button
@@ -1095,28 +891,23 @@ export default function PortalHome() {
             ) : (
               <form
                 className="suggestion-form"
-                onSubmit={
-                  handleSuggestionSubmit
-                }
+                onSubmit={handleSuggestionSubmit}
               >
                 <div className="suggestion-field">
                   <label htmlFor="suggestion-subject">
-                    Subject{" "}
-                    <span>Optional</span>
+                    Subject <span>Optional</span>
                   </label>
-
                   <input
                     id="suggestion-subject"
                     type="text"
                     maxLength={100}
                     placeholder="What's your suggestion about?"
                     value={suggestionSubject}
-                    onChange={(e) => {
+                    onChange={(event) =>
                       setSuggestionSubject(
-                        e.target.value
-                      );
-                      setSuggestionError("");
-                    }}
+                        event.target.value
+                      )
+                    }
                   />
                 </div>
 
@@ -1124,20 +915,17 @@ export default function PortalHome() {
                   <label htmlFor="suggestion-text">
                     Your Suggestion
                   </label>
-
                   <textarea
                     id="suggestion-text"
                     maxLength={1500}
                     placeholder="Tell us what you're thinking..."
                     value={suggestionText}
-                    onChange={(e) => {
+                    onChange={(event) =>
                       setSuggestionText(
-                        e.target.value
-                      );
-                      setSuggestionError("");
-                    }}
+                        event.target.value
+                      )
+                    }
                   />
-
                   <div className="suggestion-character-count">
                     {suggestionText.length} / 1500
                   </div>
@@ -1147,23 +935,20 @@ export default function PortalHome() {
                   <input
                     type="checkbox"
                     checked={isAnonymous}
-                    onChange={(e) =>
+                    onChange={(event) =>
                       setIsAnonymous(
-                        e.target.checked
+                        event.target.checked
                       )
                     }
                   />
-
-                  <span>
-                    Submit anonymously
-                  </span>
+                  <span>Submit anonymously</span>
                 </label>
 
                 {isAnonymous && (
                   <p className="anonymous-note">
-                    Your name will not be shown
-                    with this suggestion when
-                    leadership reviews it.
+                    Your name will not be displayed
+                    with the suggestion when leadership
+                    reviews it.
                   </p>
                 )}
 
@@ -1183,12 +968,8 @@ export default function PortalHome() {
                   <button
                     type="button"
                     className="suggestion-cancel"
-                    onClick={
-                      closeSuggestionBox
-                    }
-                    disabled={
-                      suggestionSubmitting
-                    }
+                    onClick={closeSuggestionBox}
+                    disabled={suggestionSubmitting}
                   >
                     Cancel
                   </button>
@@ -1196,9 +977,7 @@ export default function PortalHome() {
                   <button
                     type="submit"
                     className="suggestion-submit"
-                    disabled={
-                      suggestionSubmitting
-                    }
+                    disabled={suggestionSubmitting}
                   >
                     {suggestionSubmitting
                       ? "Submitting..."
@@ -1211,74 +990,15 @@ export default function PortalHome() {
         </section>
 
         <footer className="portal-disclaimer">
-          <div className="disclaimer-icon">
-            !
-          </div>
-
+          <div className="disclaimer-icon">!</div>
           <div className="disclaimer-content">
             <strong>
               UNOFFICIAL PERFORMANCE TRACKER
             </strong>
-
-            <p>
-              Performance information shown in
-              the Lion Nation Portal is provided
-              for motivational and tracking
-              purposes only. Results displayed
-              here are unofficial. Final submit
-              counts, incentive eligibility,
-              earnings, raffle qualification and
-              payouts are subject to verification
-              through official company reporting
-              and Finance.
-            </p>
+            <p>{DISCLAIMER}</p>
           </div>
         </footer>
       </main>
     </div>
   );
-}
-
-function formatMetric(metric) {
-  if (metric === "submits") {
-    return "Sales / Submits";
-  }
-
-  if (metric === "csr_transfers") {
-    return "CSR Transfers";
-  }
-
-  if (metric === "productivity") {
-    return "Productivity";
-  }
-
-  if (metric === "enrollment_links") {
-    return "Enrollment Links";
-  }
-
-  return metric;
-}
-
-function formatActual(metric, value) {
-  if (
-    value === null ||
-    value === undefined ||
-    value === ""
-  ) {
-    return "—";
-  }
-
-  if (metric === "productivity") {
-    return `${Number(value)}%`;
-  }
-
-  return Number(value).toLocaleString();
-}
-
-function formatRequired(metric, value) {
-  if (metric === "productivity") {
-    return `${Number(value)}%`;
-  }
-
-  return Number(value).toLocaleString();
 }
