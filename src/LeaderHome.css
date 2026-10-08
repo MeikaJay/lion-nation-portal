@@ -1530,3 +1530,63 @@ select {
     grid-template-columns: 1fr;
   }
 }
+/* =========================================
+   LION NATION — LEADER RAFFLE TEXT FIX
+   ========================================= */
+
+   .leader-portal .raffle-block {
+    color: #f5f0e6;
+  }
+  
+  .leader-portal .raffle-block > h4 {
+    color: #f0c94d;
+    font-weight: 900;
+  }
+  
+  .leader-portal .raffle-block > p:not(.raffle-disclaimer) {
+    color: #e5e0d5;
+  }
+  
+  .leader-portal .raffle-agent-card {
+    background: #1d1d1d;
+    border: 1px solid #4a4029;
+    color: #f5f0e6;
+  }
+  
+  .leader-portal .raffle-agent-card > strong {
+    display: block;
+    color: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 900;
+    margin-bottom: 8px;
+  }
+  
+  .leader-portal .raffle-agent-card > p {
+    color: #e9c34b;
+    font-size: 0.75rem;
+    font-weight: 800;
+    margin: 0 0 12px;
+  }
+  
+  .leader-portal .raffle-agent-card > div {
+    color: #e5e0d5;
+    background: #292929;
+    border: 1px solid #383838;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 7px;
+    font-size: 0.75rem;
+  }
+  
+  .leader-portal .raffle-agent-card > div span {
+    color: #c9c4b9;
+  }
+  
+  .leader-portal .raffle-agent-card > div strong {
+    color: #ffffff;
+    font-weight: 900;
+  }
+  
+  .leader-portal .raffle-disclaimer {
+    color: #bcb6aa;
+  }
