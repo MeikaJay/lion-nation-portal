@@ -1,6 +1,6 @@
 
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "./supabase";
 import {
   incentiveStatus,
@@ -38,6 +38,8 @@ function displayMetric(metric, value) {
 
 export default function PortalHome() {
   const navigate = useNavigate();
+  const { agentId } = useParams();
+  const leaderViewing = Boolean(agentId);
 
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -65,7 +67,7 @@ export default function PortalHome() {
 
   useEffect(() => {
     loadDashboard();
-  }, []);
+  }, [agentId]);
 
   async function loadDashboard() {
     setLoading(true);
@@ -82,52 +84,42 @@ export default function PortalHome() {
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from("aep_people")
-        .select(`
-          id,
-          first_name,
-          last_name,
-          username,
-          role,
-          aep_target,
-          team_id,
-          is_active,
-          incentive_category,
-          raffle_role,
-          current_submits,
-          current_csr_transfers,
-          current_productivity,
-          current_enrollment_links,
-          current_talk_time,
-          current_conversion
-        `)
-        .eq("auth_user_id", user.id)
-        .eq("is_active", true)
-        .maybeSingle();
-
-      if (profileError) throw profileError;
-
-      if (!profile) {
-        await supabase.auth.signOut();
-        navigate("/");
-        return;
-      }
-
-      if (profile.role !== "agent") {
-        if (profile.role === "leader") {
-          navigate("/leader");
+      // A leader never signs in as the agent. The RPC checks the
+      // authenticated leader and their team before returning agent data.
+      let profile;
+      if (leaderViewing) {
+        const { data, error } = await supabase.rpc(
+          "get_leader_agent_portal",
+          { p_agent_id: agentId }
+        );
+        if (error) throw error;
+        profile = data || null;
+        if (!profile) {
+          setErrorMessage("Access denied. This agent is not on your team.");
           return;
         }
-
-        if (profile.role === "admin") {
-          navigate("/admin");
+      } else {
+        const { data, error } = await supabase
+          .from("aep_people")
+          .select(`id, first_name, last_name, username, role,
+            aep_target, team_id, is_active, incentive_category,
+            raffle_role, current_submits, current_csr_transfers,
+            current_productivity, current_enrollment_links,
+            current_talk_time, current_conversion`)
+          .eq("auth_user_id", user.id)
+          .eq("is_active", true)
+          .maybeSingle();
+        if (error) throw error;
+        profile = data;
+        if (!profile) {
+          navigate("/");
           return;
         }
-
-        await supabase.auth.signOut();
-        navigate("/");
-        return;
+        if (profile.role !== "agent") {
+          navigate(profile.role === "leader" ? "/leader" :
+            profile.role === "admin" ? "/admin" : "/");
+          return;
+        }
       }
 
       setPerson(profile);
@@ -437,12 +429,17 @@ export default function PortalHome() {
           </div>
         </div>
 
+        {leaderViewing && (
+          <span style={{ color: "#d4af37", fontWeight: 800 }}>
+            LEADER VIEW · READ ONLY
+          </span>
+        )}
         <button
           className="portal-logout"
           type="button"
-          onClick={handleLogout}
+          onClick={leaderViewing ? () => navigate("/leader") : handleLogout}
         >
-          Sign Out
+          {leaderViewing ? "← Back to Leader Dashboard" : "Sign Out"}
         </button>
       </header>
 
@@ -1053,7 +1050,7 @@ export default function PortalHome() {
             </p>
           </article>
 
-          <article className="portal-card suggestion-card">
+          {!leaderViewing && <article className="portal-card suggestion-card">
             <div className="section-heading">
               <div>
                 <p className="section-eyebrow">
@@ -1183,7 +1180,7 @@ export default function PortalHome() {
                 </div>
               </form>
             )}
-          </article>
+          </article>}
         </section>
 
         <footer className="portal-disclaimer">

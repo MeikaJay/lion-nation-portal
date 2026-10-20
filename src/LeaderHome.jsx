@@ -1137,8 +1137,14 @@ export default function LeaderHome() {
                           {agent.last_name}
 
                         </strong>
-
-
+                        <button type="button"
+                          onClick={() => navigate(`/leader/agent/${agent.id}`)}
+                          style={{ display: "block", marginTop: 6,
+                            padding: "5px 9px", border: "1px solid #d4af37",
+                            borderRadius: 8, background: "transparent",
+                            color: "#d4af37", cursor: "pointer", fontWeight: 700 }}>
+                          ◉ View Portal
+                        </button>
 
                         {changed && (
 
