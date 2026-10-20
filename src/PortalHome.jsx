@@ -28,9 +28,11 @@ function displayMetric(metric, value) {
   }
 
   const formatted = number(value);
+
   if (metric === "productivity" || metric === "conversion") {
     return `${formatted}%`;
   }
+
   return formatted;
 }
 
@@ -207,6 +209,7 @@ export default function PortalHome() {
 
       setGroups(groupResult.data || []);
       setMemberships(membershipResult.data || []);
+
       setGroupsLoaded(
         !groupResult.error && !membershipResult.error
       );
@@ -251,6 +254,7 @@ export default function PortalHome() {
   const target = Number(person?.aep_target || 0);
   const submits = Number(person?.current_submits || 0);
   const remaining = Math.max(target - submits, 0);
+
   const progressPercent =
     target > 0 ? Math.round((submits / target) * 100) : 0;
 
@@ -259,14 +263,16 @@ export default function PortalHome() {
     Math.min(progressPercent, 100)
   );
 
+  // INCENTIVE VISIBILITY FIX
+  // Use configured incentive groups instead of hire category.
+  // The incentiveStatus function determines the agent's group.
   const activeIncentiveData = useMemo(
     () =>
       incentives
-        .filter(
-          (incentive) =>
-            !incentive.incentive_category ||
-            incentive.incentive_category ===
-              person?.incentive_category
+        .filter((incentive) =>
+          groups.some(
+            (group) => group.incentive_id === incentive.id
+          )
         )
         .map((incentive) => ({
           ...incentive,
@@ -304,13 +310,16 @@ export default function PortalHome() {
     [raffles, raffleRequirements, person]
   );
 
-  // CHASE THE RABBIT:
-  // Rank agents strictly by total sales (MM submits).
-  // Individual AEP target percentage does not affect rank.
-  const rankedAgents = [...leaderboard].sort(
-    (a, b) =>
-      Number(b.total_submits || 0) -
-      Number(a.total_submits || 0)
+  // CHASE THE RABBIT LEADERBOARD
+  // Highest MM submit count ranks first.
+  const rankedAgents = useMemo(
+    () =>
+      [...leaderboard].sort(
+        (a, b) =>
+          Number(b.total_submits || 0) -
+          Number(a.total_submits || 0)
+      ),
+    [leaderboard]
   );
 
   const topAgents = rankedAgents.slice(0, 5);
@@ -536,12 +545,14 @@ export default function PortalHome() {
             ) : (
               activeIncentiveData.map((incentive) => {
                 const status = incentive.status;
+
                 const achieved = status.ready
                   ? status.tiers.filter(
                       (t) =>
                         submits >= Number(t.required_submits)
                     )
                   : [];
+
                 const next = status.ready ? status.next : null;
 
                 const priorThreshold = achieved.length
@@ -579,9 +590,11 @@ export default function PortalHome() {
                         YOUR INCENTIVE
                       </span>
                       <h4>{incentive.incentive_name}</h4>
+
                       {incentive.description && (
                         <p>{incentive.description}</p>
                       )}
+
                       {status.ready && (
                         <span className="reward-group-pill">
                           {status.group}
@@ -646,6 +659,7 @@ export default function PortalHome() {
                                   : "Every tier reached!"}
                               </h5>
                             </div>
+
                             <strong>
                               {next
                                 ? `${number(submits)} / ${number(nextThreshold)}`
@@ -696,6 +710,7 @@ export default function PortalHome() {
                             const reached =
                               submits >=
                               Number(tier.required_submits);
+
                             const isNext =
                               next?.id === tier.id;
 
@@ -793,6 +808,7 @@ export default function PortalHome() {
                           </span>
                           <h4>{raffle.raffle_name}</h4>
                         </div>
+
                         <span className="reward-raffle-badge">
                           {status.qualified
                             ? "ALL MET*"
@@ -819,6 +835,7 @@ export default function PortalHome() {
                             {raffle.prize_name ||
                               "Raffle prize"}
                           </h5>
+
                           {raffle.description && (
                             <p>{raffle.description}</p>
                           )}
@@ -837,9 +854,12 @@ export default function PortalHome() {
                                 : "Requirements pending"}
                             </h5>
                           </div>
+
                           <strong>
                             {total
-                              ? `${Math.round((met / total) * 100)}%`
+                              ? `${Math.round(
+                                  (met / total) * 100
+                                )}%`
                               : "—"}
                           </strong>
                         </div>
@@ -886,9 +906,7 @@ export default function PortalHome() {
                             return (
                               <div
                                 className={`reward-qualifier ${
-                                  req.met
-                                    ? "is-met"
-                                    : ""
+                                  req.met ? "is-met" : ""
                                 }`}
                                 key={req.id}
                               >
@@ -896,11 +914,13 @@ export default function PortalHome() {
                                   <span className="reward-check">
                                     {req.met ? "✓" : "○"}
                                   </span>
+
                                   <strong>
                                     {metricLabel(
                                       req.metric_type
                                     )}
                                   </strong>
+
                                   <span className="reward-qualifier-values">
                                     {displayMetric(
                                       req.metric_type,
@@ -987,12 +1007,14 @@ export default function PortalHome() {
                       <div className="leaderboard-person">
                         <strong>
                           {agent.agent_name}
+
                           {isMe && (
                             <span className="you-label">
                               YOU
                             </span>
                           )}
                         </strong>
+
                         <span>
                           {agent.team_name ||
                             "Lion Nation"}
@@ -1003,6 +1025,7 @@ export default function PortalHome() {
                         <strong>
                           {number(agent.total_submits)}
                         </strong>
+
                         <span>
                           {Number(
                             agent.progress_percent || 0
@@ -1045,6 +1068,7 @@ export default function PortalHome() {
                 <strong>
                   Help make Lion Nation better.
                 </strong>
+
                 <p>
                   Have an idea, suggestion or feedback?
                   Share it with Lion Nation leadership.
@@ -1067,6 +1091,7 @@ export default function PortalHome() {
                   <label htmlFor="suggestion-subject">
                     Subject <span>Optional</span>
                   </label>
+
                   <input
                     id="suggestion-subject"
                     type="text"
@@ -1085,6 +1110,7 @@ export default function PortalHome() {
                   <label htmlFor="suggestion-text">
                     Your Suggestion
                   </label>
+
                   <textarea
                     id="suggestion-text"
                     maxLength={1500}
@@ -1096,6 +1122,7 @@ export default function PortalHome() {
                       )
                     }
                   />
+
                   <div className="suggestion-character-count">
                     {suggestionText.length} / 1500
                   </div>
