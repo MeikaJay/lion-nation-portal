@@ -499,7 +499,11 @@ export default function LeaderHome() {
 
           String(current.enrollmentLinks) !==
 
-            String(original.enrollmentLinks)
+            String(original.enrollmentLinks) ||
+
+          String(current.talkTime) !== String(original.talkTime) ||
+
+          String(current.conversion) !== String(original.conversion)
 
         );
 
