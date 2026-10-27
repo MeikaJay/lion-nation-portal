@@ -499,11 +499,7 @@ export default function LeaderHome() {
 
           String(current.enrollmentLinks) !==
 
-            String(original.enrollmentLinks) ||
-
-          String(current.talkTime) !== String(original.talkTime) ||
-
-          String(current.conversion) !== String(original.conversion)
+            String(original.enrollmentLinks)
 
         );
 
@@ -1458,7 +1454,7 @@ export default function LeaderHome() {
           {raffles.length === 0 ? <EmptyState title="No active raffles" text="Admin has not published a raffle."/> : raffles.map(raffle => <div className="tracker-block raffle-block" key={raffle.id}>
           {raffle.image_url && <img src={raffle.image_url} alt={raffle.raffle_name} style={{maxWidth:320,width:'100%',maxHeight:220,objectFit:'contain'}}/>}
           <h4>{raffle.prize_name}</h4><p>{raffle.raffle_name}</p>
-          <div className="raffle-agent-grid">{agents.map(agent => {const status=getRaffleStatus(agent,raffle);if(!status.eligible)return null;return <article className="raffle-agent-card" key={agent.id}><strong>{agent.first_name} {agent.last_name}</strong><p>{status.pending?'PENDING VERIFICATION':status.qualified?'PROVISIONALLY QUALIFIED':`${status.metCount} of ${status.details.length} requirements`}</p>{status.details.map(r=><div key={r.id}><span>{metricLabel(r.metric_type)}: </span><strong>{r.pending?'Pending':r.actual===null?'—':r.actual} / {r.required_value}</strong> {r.met?'✓':''}</div>)}</article>})}</div>
+          <div className="raffle-agent-grid">{agents.map(agent => {const status=getRaffleStatus(agent,raffle);if(!status.eligible)return null;return <article className="raffle-agent-card" key={agent.id}><strong>{agent.first_name} {agent.last_name}</strong><p>{status.qualified?'PROVISIONALLY QUALIFIED':status.pending?`${status.metCount} of ${status.details.length} verified requirements • Final verification pending`:`${status.metCount} of ${status.details.length} requirements`}</p>{status.details.map(r=><div key={r.id}><span>{metricLabel(r.metric_type)}: </span><strong>{r.actual===null?'Pending':r.partial?`${r.actual}+ (verified minimum)`:r.actual} / {r.required_value}</strong> {r.met?'✓':''}</div>)}</article>})}</div>
           <p className="raffle-disclaimer">Unofficial progress only. Final qualification is subject to official reporting.</p>
         </div>)}
       </section>

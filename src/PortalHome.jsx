@@ -914,7 +914,7 @@ export default function PortalHome() {
                               >
                                 <div className="reward-qualifier-top">
                                   <span className="reward-check">
-                                    {req.pending ? "?" : req.met ? "✓" : "○"}
+                                    {req.pending && !req.met ? "?" : req.met ? "✓" : "○"}
                                   </span>
 
                                   <strong>
@@ -927,7 +927,7 @@ export default function PortalHome() {
                                     {displayMetric(
                                       req.metric_type,
                                       actual
-                                    )}{" "}
+                                    )}{req.partial ? "+" : ""}{" "}
                                     <em>/</em>{" "}
                                     {displayMetric(
                                       req.metric_type,
