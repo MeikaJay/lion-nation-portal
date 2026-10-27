@@ -6,6 +6,7 @@ import { supabase } from "./supabase";
 
 import "./LeaderHome.css";
 import { incentiveStatus, raffleStatus, metricLabel } from "./aepTracking";
+import { periodRaffleStatus, loadRafflePeriods } from "./rafflePeriod";
 
 
 
@@ -51,6 +52,7 @@ export default function LeaderHome() {
   const [raffles, setRaffles] = useState([]);
 
   const [raffleRequirements, setRaffleRequirements] = useState([]);
+  const [rafflePeriods, setRafflePeriods] = useState({});
 
 
 
@@ -397,6 +399,7 @@ export default function LeaderHome() {
       setRaffles(rafflesResult.data || []);
 
       setRaffleRequirements(requirementsResult.data || []);
+      setRafflePeriods(await loadRafflePeriods(supabase, safeAgents.map(a => a.id), rafflesResult.data || []));
 
     } catch (error) {
 
@@ -723,7 +726,7 @@ export default function LeaderHome() {
   }
   function getRaffleStatus(agent, raffle) {
     const v=performanceValues[agent.id] || {};
-    return raffleStatus({...agent,current_submits:Number(v.submits || 0),current_csr_transfers:Number(v.csrTransfers || 0),current_productivity:v.productivity === '' ? null : Number(v.productivity),current_enrollment_links:Number(v.enrollmentLinks || 0),current_talk_time:v.talkTime === '' ? null : Number(v.talkTime),current_conversion:v.conversion === '' ? null : Number(v.conversion)},raffle,raffleRequirements);
+    return periodRaffleStatus({...agent,current_submits:Number(v.submits || 0),current_csr_transfers:Number(v.csrTransfers || 0),current_productivity:v.productivity === '' ? null : Number(v.productivity),current_enrollment_links:Number(v.enrollmentLinks || 0),current_talk_time:v.talkTime === '' ? null : Number(v.talkTime),current_conversion:v.conversion === '' ? null : Number(v.conversion)},raffle,raffleRequirements,rafflePeriods[`${agent.id}:${raffle.id}`]);
   }
 
   async function submitSuggestion(event) {
@@ -1451,7 +1454,7 @@ export default function LeaderHome() {
           {raffles.length === 0 ? <EmptyState title="No active raffles" text="Admin has not published a raffle."/> : raffles.map(raffle => <div className="tracker-block raffle-block" key={raffle.id}>
           {raffle.image_url && <img src={raffle.image_url} alt={raffle.raffle_name} style={{maxWidth:320,width:'100%',maxHeight:220,objectFit:'contain'}}/>}
           <h4>{raffle.prize_name}</h4><p>{raffle.raffle_name}</p>
-          <div className="raffle-agent-grid">{agents.map(agent => {const status=getRaffleStatus(agent,raffle);if(!status.eligible)return null;return <article className="raffle-agent-card" key={agent.id}><strong>{agent.first_name} {agent.last_name}</strong><p>{status.qualified?'PROVISIONALLY QUALIFIED':`${status.metCount} of ${status.details.length} requirements`}</p>{status.details.map(r=><div key={r.id}><span>{metricLabel(r.metric_type)}: </span><strong>{r.actual===null?'—':r.actual} / {r.required_value}</strong> {r.met?'✓':''}</div>)}</article>})}</div>
+          <div className="raffle-agent-grid">{agents.map(agent => {const status=getRaffleStatus(agent,raffle);if(!status.eligible)return null;return <article className="raffle-agent-card" key={agent.id}><strong>{agent.first_name} {agent.last_name}</strong><p>{status.pending?'PENDING VERIFICATION':status.qualified?'PROVISIONALLY QUALIFIED':`${status.metCount} of ${status.details.length} requirements`}</p>{status.details.map(r=><div key={r.id}><span>{metricLabel(r.metric_type)}: </span><strong>{r.pending?'Pending':r.actual===null?'—':r.actual} / {r.required_value}</strong> {r.met?'✓':''}</div>)}</article>})}</div>
           <p className="raffle-disclaimer">Unofficial progress only. Final qualification is subject to official reporting.</p>
         </div>)}
       </section>

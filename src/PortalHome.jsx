@@ -8,6 +8,7 @@ import {
   metricLabel,
 } from "./aepTracking";
 import "./PortalHome.css";
+import { periodRaffleStatus, loadRafflePeriods } from "./rafflePeriod";
 
 const DISCLAIMER =
   "Performance information shown in the Lion Nation Portal is provided for motivational and tracking purposes only. Results displayed here are unofficial. Final submit counts, incentive eligibility, earnings, raffle qualification and payouts are subject to verification through official company reporting and Finance.";
@@ -56,6 +57,7 @@ export default function PortalHome() {
   const [raffles, setRaffles] = useState([]);
   const [raffleRequirements, setRaffleRequirements] = useState([]);
   const [raffleImages, setRaffleImages] = useState({});
+  const [rafflePeriods, setRafflePeriods] = useState({});
 
   const [showSuggestionForm, setShowSuggestionForm] = useState(false);
   const [suggestionSubject, setSuggestionSubject] = useState("");
@@ -215,6 +217,7 @@ export default function PortalHome() {
         console.error("Requirements error:", requirementResult.error);
       }
       setRaffleRequirements(requirementResult.data || []);
+      setRafflePeriods(await loadRafflePeriods(supabase, [profile.id], raffleResult.data || []));
 
       const imageEntries = await Promise.all(
         (raffleResult.data || [])
@@ -292,14 +295,15 @@ export default function PortalHome() {
       raffles
         .map((raffle) => ({
           ...raffle,
-          status: raffleStatus(
+          status: periodRaffleStatus(
             person || {},
             raffle,
-            raffleRequirements
+            raffleRequirements,
+            rafflePeriods[`${person?.id}:${raffle.id}`]
           ),
         }))
         .filter((raffle) => raffle.status.eligible),
-    [raffles, raffleRequirements, person]
+    [raffles, raffleRequirements, person, rafflePeriods]
   );
 
   // CHASE THE RABBIT LEADERBOARD
@@ -839,6 +843,7 @@ export default function PortalHome() {
                         </div>
                       </div>
 
+                      {status.pending && <p style={{color:"#d4af37",fontSize:13}}>{status.periodMessage}</p>}
                       <div className="reward-raffle-progress">
                         <div className="reward-raffle-progress-title">
                           <div>
@@ -909,7 +914,7 @@ export default function PortalHome() {
                               >
                                 <div className="reward-qualifier-top">
                                   <span className="reward-check">
-                                    {req.met ? "✓" : "○"}
+                                    {req.pending ? "?" : req.met ? "✓" : "○"}
                                   </span>
 
                                   <strong>
